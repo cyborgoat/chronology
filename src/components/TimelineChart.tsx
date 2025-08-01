@@ -9,7 +9,16 @@ interface TimelineChartProps {
 }
 
 export function TimelineChart({ onPointClick }: TimelineChartProps) {
-  const { selectedProject, selectedMetrics } = useProjects();
+  const { selectedProject, selectedMetrics, setSelectedMetrics } = useProjects();
+
+  const allMetrics: MetricType[] = ['accuracy', 'loss', 'precision', 'recall', 'f1Score'];
+
+  const handleMetricToggle = (metric: MetricType) => {
+    const newMetrics = selectedMetrics.includes(metric)
+      ? selectedMetrics.filter((m: MetricType) => m !== metric)
+      : [...selectedMetrics, metric];
+    setSelectedMetrics(newMetrics);
+  };
 
   if (!selectedProject) {
     return (
@@ -57,11 +66,38 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
         <div className="flex justify-between items-center">
           <div>
             <CardTitle>{selectedProject.name} - Performance Timeline</CardTitle>
-            <CardDescription>Track your AI model metrics over time</CardDescription>
           </div>
           <div className="text-sm text-muted-foreground">
             Click on data points to edit values
           </div>
+        </div>
+        
+        {/* Compact Metric Selector */}
+        <div className="mt-4 pt-4 border-t">
+          <div className="flex flex-wrap gap-2">
+            {allMetrics.map(metric => (
+              <button
+                key={metric}
+                onClick={() => handleMetricToggle(metric)}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  selectedMetrics.includes(metric)
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+              >
+                <div 
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: metricColors[metric] }}
+                />
+                {metricLabels[metric]}
+              </button>
+            ))}
+          </div>
+          {selectedMetrics.length === 0 && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Select metrics to display in the timeline
+            </p>
+          )}
         </div>
       </CardHeader>
       <CardContent>
