@@ -131,7 +131,8 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
   let chartData: ChartData[] = [];
 
   if (chartViewMode === "metric-wise") {
-    // Show multiple metrics for the selected project (aggregate all models or show selected models)
+    // Show multiple metrics for the selected project, but only for the first selected model (or first available model)
+    const modelToShow = selectedModels.length > 0 ? selectedModels[0] : (availableModels.length > 0 ? availableModels[0] : undefined);
     chartData = selectedMetrics.map((metric) => ({
       id: metricLabels[metric],
       color: metricColors[metric],
@@ -139,8 +140,7 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
         .filter(
           (m) =>
             m[metric] !== undefined &&
-            (selectedModels.length === 0 ||
-              selectedModels.includes(m.modelName))
+            m.modelName === modelToShow
         )
         .map((m) => ({
           x: new Date(m.timestamp).toLocaleDateString("en-US", {
@@ -337,26 +337,34 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {availableModels.map((modelName) => (
-                    <button
-                      key={modelName}
-                      onClick={() => handleModelToggle(modelName)}
-                      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                        selectedModels.includes(modelName)
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
-                      }`}
-                    >
-                      <div
-                        className="w-2 h-2 rounded-full"
-                        style={{
-                          backgroundColor:
-                            modelColors[modelName] || modelColors["default-1"],
-                        }}
-                      />
-                      {modelName}
-                    </button>
-                  ))}
+                  {availableModels.map((modelName, idx) => {
+                    // In metric-wise view, only the first selected model is used for chart, so highlight only that one
+                    const isActive = chartViewMode === "metric-wise"
+                      ? selectedModels.length > 0
+                        ? selectedModels[0] === modelName
+                        : idx === 0 // fallback for initial state
+                      : selectedModels.includes(modelName);
+                    return (
+                      <button
+                        key={modelName}
+                        onClick={() => handleModelToggle(modelName)}
+                        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                          isActive
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        }`}
+                      >
+                        <div
+                          className="w-2 h-2 rounded-full"
+                          style={{
+                            backgroundColor:
+                              modelColors[modelName] || modelColors["default-1"],
+                          }}
+                        />
+                        {modelName}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -449,6 +457,7 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
           <div className="h-96">
             <ResponsiveLine
               data={chartData}
+              colors={chartData.map(series => series.color)}
               margin={{ top: 50, right: 110, bottom: 50, left: 60 }}
               xScale={{ type: "point" }}
               yScale={{
@@ -579,31 +588,36 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
                   </div>
                 );
               }}
-              legends={[
-                {
-                  anchor: "bottom-right",
-                  direction: "column",
-                  justify: false,
-                  translateX: 100,
-                  translateY: 0,
-                  itemsSpacing: 0,
-                  itemDirection: "left-to-right",
-                  itemWidth: 80,
-                  itemHeight: 20,
-                  itemOpacity: 0.75,
-                  symbolSize: 12,
-                  symbolShape: "circle",
-                  symbolBorderColor: "rgba(0, 0, 0, .5)",
-                  effects: [
-                    {
-                      on: "hover",
-                      style: {
-                        itemBackground: "rgba(0, 0, 0, .03)",
-                        itemOpacity: 1,
-                      },
-                    },
-                  ],
-                },
+              legends={[ 
+                { 
+                  anchor: "bottom-right", 
+                  direction: "column", 
+                  justify: false, 
+                  translateX: 100, 
+                  translateY: 0, 
+                  itemsSpacing: 0, 
+                  itemDirection: "left-to-right", 
+                  itemWidth: 80, 
+                  itemHeight: 20, 
+                  itemOpacity: 0.75, 
+                  symbolSize: 12, 
+                  symbolShape: "circle", 
+                  symbolBorderColor: "rgba(0, 0, 0, .5)", 
+                  data: chartData.map((series) => ({
+                    id: series.id,
+                    label: series.id,
+                    color: series.color,
+                  })),
+                  effects: [ 
+                    { 
+                      on: "hover", 
+                      style: { 
+                        itemBackground: "rgba(0, 0, 0, .03)", 
+                        itemOpacity: 1, 
+                      }, 
+                    }, 
+                  ], 
+                }, 
               ]}
               animate={true}
               motionConfig="gentle"
