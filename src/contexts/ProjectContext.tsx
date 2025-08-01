@@ -1,20 +1,30 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import type { Project, ProjectMetric, MetricType } from '../types';
+import type { Project, ProjectMetric, MetricType, ChartViewMode } from '../types';
 import { sampleProjects } from '../data/sampleData';
 
 interface ProjectContextType {
   projects: Project[];
   selectedProjectId: string | null;
   selectedProject: Project | null;
+  selectedProjectIds: string[]; // For project comparison (keeping for future use)
+  selectedProjects: Project[]; // For project comparison (keeping for future use)
   selectedMetrics: MetricType[];
+  selectedModels: string[]; // For model-wise comparison within a project
+  chartViewMode: ChartViewMode;
+  selectedMetricForComparison: MetricType | null; // For model-wise comparison
   addProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateProject: (id: string, updates: Partial<Project>) => void;
   deleteProject: (id: string) => void;
   selectProject: (id: string | null) => void;
+  setSelectedProjectIds: (ids: string[]) => void;
+  setSelectedModels: (models: string[]) => void;
   addMetric: (projectId: string, metric: Omit<ProjectMetric, 'id'>) => void;
   updateMetric: (projectId: string, metricId: string, updates: Partial<ProjectMetric>) => void;
   deleteMetric: (projectId: string, metricId: string) => void;
   setSelectedMetrics: (metrics: MetricType[]) => void;
+  setChartViewMode: (mode: ChartViewMode) => void;
+  setSelectedMetricForComparison: (metric: MetricType | null) => void;
+  getAvailableModels: (projectId?: string) => string[];
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -22,9 +32,22 @@ const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const [projects, setProjects] = useState<Project[]>(sampleProjects);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(sampleProjects[0]?.id || null);
+  const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
   const [selectedMetrics, setSelectedMetrics] = useState<MetricType[]>(['accuracy', 'loss']);
+  const [selectedModels, setSelectedModels] = useState<string[]>([]);
+  const [chartViewMode, setChartViewMode] = useState<ChartViewMode>('metric-wise');
+  const [selectedMetricForComparison, setSelectedMetricForComparison] = useState<MetricType | null>('accuracy');
 
   const selectedProject = projects.find(p => p.id === selectedProjectId) || null;
+  const selectedProjects = projects.filter(p => selectedProjectIds.includes(p.id));
+
+  const getAvailableModels = (projectId?: string): string[] => {
+    const targetProject = projectId ? projects.find(p => p.id === projectId) : selectedProject;
+    if (!targetProject) return [];
+    
+    const modelNames = [...new Set(targetProject.metrics.map(m => m.modelName))];
+    return modelNames;
+  };
 
   const addProject = useCallback((projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => {
     const newProject: Project = {
@@ -104,15 +127,25 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     projects,
     selectedProjectId,
     selectedProject,
+    selectedProjectIds,
+    selectedProjects,
     selectedMetrics,
+    selectedModels,
+    chartViewMode,
+    selectedMetricForComparison,
     addProject,
     updateProject,
     deleteProject,
     selectProject,
+    setSelectedProjectIds,
+    setSelectedModels,
     addMetric,
     updateMetric,
     deleteMetric,
     setSelectedMetrics,
+    setChartViewMode,
+    setSelectedMetricForComparison,
+    getAvailableModels,
   };
 
   return (

@@ -17,13 +17,16 @@ import {
 } from "@/components/ui/table";
 
 export function DataTable() {
-  const { selectedProject, updateMetric, deleteMetric, addMetric } = useProjects();
+  const { selectedProject, updateMetric, deleteMetric, addMetric, getAvailableModels } = useProjects();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<ProjectMetric>>({});
   const [showAddForm, setShowAddForm] = useState(false);
   const [newMetric, setNewMetric] = useState<Partial<ProjectMetric>>({
     timestamp: new Date().toISOString().split('T')[0],
+    modelName: '',
   });
+
+  const availableModels = selectedProject ? getAvailableModels(selectedProject.id) : [];
 
   if (!selectedProject) {
     return (
@@ -60,14 +63,24 @@ export function DataTable() {
   };
 
   const handleAddMetric = () => {
-    if (selectedProject && newMetric.timestamp) {
+    if (selectedProject && newMetric.timestamp && newMetric.modelName) {
       addMetric(selectedProject.id, newMetric as Omit<ProjectMetric, 'id'>);
-      setNewMetric({ timestamp: new Date().toISOString().split('T')[0] });
+      setNewMetric({ 
+        timestamp: new Date().toISOString().split('T')[0],
+        modelName: '',
+      });
       setShowAddForm(false);
     }
   };
 
   const metricKeys: MetricType[] = ['accuracy', 'loss', 'precision', 'recall', 'f1Score'];
+
+  // Sort metrics by model name and then by date
+  const sortedMetrics = selectedProject.metrics.sort((a, b) => {
+    const modelComparison = (a.modelName || '').localeCompare(b.modelName || '');
+    if (modelComparison !== 0) return modelComparison;
+    return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+  });
 
   return (
     <Card>
@@ -76,7 +89,7 @@ export function DataTable() {
           <div>
             <CardTitle>{selectedProject.name} - Data Table</CardTitle>
             <CardDescription>
-              Manage and edit your project metrics data
+              Manage and edit your project metrics data across different AI models
             </CardDescription>
           </div>
           <Button onClick={() => setShowAddForm(true)} size="sm">
@@ -91,6 +104,7 @@ export function DataTable() {
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
+                <TableHead>Model</TableHead>
                 {metricKeys.map(key => (
                   <TableHead key={key}>{metricLabels[key]}</TableHead>
                 ))}
@@ -98,8 +112,13 @@ export function DataTable() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {selectedProject.metrics.map(metric => (
-                <TableRow key={metric.id}>
+              {sortedMetrics.map((metric, index) => {
+                const isFirstOfModel = index === 0 || sortedMetrics[index - 1].modelName !== metric.modelName;
+                return (
+                  <TableRow 
+                    key={metric.id}
+                    className={isFirstOfModel ? 'border-t-2 border-t-muted' : ''}
+                  >
                   <TableCell>
                     {editingId === metric.id ? (
                       <Input
@@ -110,6 +129,29 @@ export function DataTable() {
                       />
                     ) : (
                       new Date(metric.timestamp).toLocaleDateString()
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {editingId === metric.id ? (
+                      <>
+                        <Input
+                          type="text"
+                          value={editValues.modelName || ''}
+                          onChange={(e) => setEditValues(prev => ({ ...prev, modelName: e.target.value }))}
+                          className="w-32"
+                          placeholder="Model name"
+                          list="available-models-edit"
+                        />
+                        <datalist id="available-models-edit">
+                          {availableModels.map(model => (
+                            <option key={model} value={model} />
+                          ))}
+                        </datalist>
+                      </>
+                    ) : (
+                      <span className="font-medium text-sm px-2 py-1 bg-muted rounded-md">
+                        {metric.modelName || '-'}
+                      </span>
                     )}
                   </TableCell>
                   {metricKeys.map(key => (
@@ -174,7 +216,8 @@ export function DataTable() {
                     )}
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
               
               {showAddForm && (
                 <TableRow className="bg-muted/50">
@@ -185,6 +228,22 @@ export function DataTable() {
                       onChange={(e) => setNewMetric(prev => ({ ...prev, timestamp: e.target.value }))}
                       required
                     />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="text"
+                      value={newMetric.modelName || ''}
+                      onChange={(e) => setNewMetric(prev => ({ ...prev, modelName: e.target.value }))}
+                      className="w-32"
+                      placeholder="Model name"
+                      required
+                      list="available-models-new"
+                    />
+                    <datalist id="available-models-new">
+                      {availableModels.map(model => (
+                        <option key={model} value={model} />
+                      ))}
+                    </datalist>
                   </TableCell>
                   {metricKeys.map(key => (
                     <TableCell key={key}>
@@ -216,7 +275,10 @@ export function DataTable() {
                       <Button
                         onClick={() => {
                           setShowAddForm(false);
-                          setNewMetric({ timestamp: new Date().toISOString().split('T')[0] });
+                          setNewMetric({ 
+                            timestamp: new Date().toISOString().split('T')[0],
+                            modelName: '',
+                          });
                         }}
                         size="sm"
                         variant="ghost"
@@ -234,7 +296,7 @@ export function DataTable() {
 
         {selectedProject.metrics.length === 0 && !showAddForm && (
           <div className="text-center py-8 text-muted-foreground">
-            No metrics data available. Click "Add Metric" to get started.
+            No metrics data available. Click "Add Metric" to get started by adding model performance data.
           </div>
         )}
       </CardContent>

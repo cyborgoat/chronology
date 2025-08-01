@@ -1,6 +1,8 @@
 export interface ProjectMetric {
   id: string;
   timestamp: string;
+  modelName: string; // Added model dimension
+  modelVersion?: string; // Optional version info
   accuracy?: number;
   loss?: number;
   precision?: number;
@@ -31,3 +33,5 @@ export interface ChartData {
 export type MetricType = 'accuracy' | 'loss' | 'precision' | 'recall' | 'f1Score';
 
 export type ViewMode = 'chart' | 'table';
+
+export type ChartViewMode = 'metric-wise' | 'model-wise';
