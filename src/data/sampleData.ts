@@ -1,4 +1,62 @@
-import type { Project } from '../types';
+import type { Project, MetricSettings } from '../types';
+
+// Default metrics configuration
+const getDefaultMetrics = (): MetricSettings[] => [
+  {
+    id: 'accuracy',
+    name: 'Accuracy',
+    type: 'percentage' as const,
+    color: 'hsl(200, 100%, 50%)',
+    unit: '%',
+    enabled: true,
+    min: 0,
+    max: 1,
+    description: 'Model prediction accuracy'
+  },
+  {
+    id: 'loss',
+    name: 'Loss',
+    type: 'float' as const,
+    color: 'hsl(0, 100%, 50%)',
+    unit: '',
+    enabled: true,
+    min: 0,
+    description: 'Training loss value'
+  },
+  {
+    id: 'precision',
+    name: 'Precision',
+    type: 'percentage' as const,
+    color: 'hsl(120, 100%, 40%)',
+    unit: '%',
+    enabled: true,
+    min: 0,
+    max: 1,
+    description: 'Model precision score'
+  },
+  {
+    id: 'recall',
+    name: 'Recall',
+    type: 'percentage' as const,
+    color: 'hsl(60, 100%, 50%)',
+    unit: '%',
+    enabled: true,
+    min: 0,
+    max: 1,
+    description: 'Model recall score'
+  },
+  {
+    id: 'f1Score',
+    name: 'F1 Score',
+    type: 'percentage' as const,
+    color: 'hsl(280, 100%, 50%)',
+    unit: '%',
+    enabled: true,
+    min: 0,
+    max: 1,
+    description: 'F1 score metric'
+  }
+];
 
 // Sample projects data
 export const sampleProjects: Project[] = [
@@ -9,8 +67,7 @@ export const sampleProjects: Project[] = [
     createdAt: '2024-01-01',
     updatedAt: '2024-06-30',
     color: 'hsl(200, 100%, 50%)',
-    enabledDefaultMetrics: ['accuracy', 'loss', 'precision', 'recall', 'f1Score'],
-    customMetrics: [],
+    metricsConfig: getDefaultMetrics(),
     metrics: [
       // ResNet-50 model
       { id: '1-1', timestamp: '2024-01-01', modelName: 'ResNet-50', accuracy: 0.75, loss: 0.65, precision: 0.73, recall: 0.72, f1Score: 0.725 },
@@ -35,8 +92,7 @@ export const sampleProjects: Project[] = [
     createdAt: '2024-02-15',
     updatedAt: '2024-06-30',
     color: 'hsl(120, 100%, 40%)',
-    enabledDefaultMetrics: ['accuracy', 'loss', 'precision', 'recall', 'f1Score'],
-    customMetrics: [],
+    metricsConfig: getDefaultMetrics(),
     metrics: [
       // BERT model
       { id: '2-1', timestamp: '2024-02-15', modelName: 'BERT-base', accuracy: 0.68, loss: 0.78, precision: 0.65, recall: 0.67, f1Score: 0.66 },
@@ -61,8 +117,7 @@ export const sampleProjects: Project[] = [
     createdAt: '2024-03-01',
     updatedAt: '2024-06-30',
     color: 'hsl(300, 100%, 50%)',
-    enabledDefaultMetrics: ['accuracy', 'loss', 'precision', 'recall', 'f1Score'],
-    customMetrics: [],
+    metricsConfig: getDefaultMetrics(),
     metrics: [
       // LSTM model
       { id: '3-1', timestamp: '2024-03-01', modelName: 'LSTM', accuracy: 0.62, loss: 0.85, precision: 0.60, recall: 0.63, f1Score: 0.615 },

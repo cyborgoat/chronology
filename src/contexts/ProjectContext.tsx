@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import type { Project, ProjectMetric, MetricType, ChartViewMode, CustomMetric } from '../types';
+import type { Project, ProjectMetric, MetricType, ChartViewMode, MetricSettings } from '../types';
 import { sampleProjects } from '../data/sampleData';
 
 interface ProjectContextType {
@@ -25,7 +25,7 @@ interface ProjectContextType {
   setChartViewMode: (mode: ChartViewMode) => void;
   setSelectedMetricForComparison: (metric: MetricType | null) => void;
   getAvailableModels: (projectId?: string) => string[];
-  updateProjectMetricsConfig: (projectId: string, customMetrics: CustomMetric[], enabledDefaultMetrics: string[]) => void;
+  updateProjectMetricsConfig: (projectId: string, metricsConfig: MetricSettings[]) => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -124,13 +124,12 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     ));
   }, []);
 
-  const updateProjectMetricsConfig = useCallback((projectId: string, customMetrics: CustomMetric[], enabledDefaultMetrics: string[]) => {
+  const updateProjectMetricsConfig = useCallback((projectId: string, metricsConfig: MetricSettings[]) => {
     setProjects(prev => prev.map(project =>
       project.id === projectId
         ? {
             ...project,
-            customMetrics,
-            enabledDefaultMetrics,
+            metricsConfig,
             updatedAt: new Date().toISOString()
           }
         : project

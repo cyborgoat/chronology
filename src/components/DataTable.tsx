@@ -100,16 +100,18 @@ export function DataTable() {
     "f1Score",
   ];
 
-  // Get all available metrics (default + custom)
+  // Get all available metrics from metricsConfig
   const getAvailableMetrics = () => {
-    const defaultMetrics = (
-      selectedProject?.enabledDefaultMetrics || metricKeys
-    ).filter((metric) =>
-      metricKeys.includes(metric as MetricType)
-    ) as MetricType[];
-    const customMetrics = (selectedProject?.customMetrics || [])
-      .filter((metric) => metric.enabled)
-      .map((metric) => metric.id);
+    if (!selectedProject?.metricsConfig) return { defaultMetrics: [], customMetrics: [] };
+    
+    const enabledMetrics = selectedProject.metricsConfig.filter(metric => metric.enabled);
+    const defaultMetrics = enabledMetrics
+      .filter(metric => metricKeys.includes(metric.id as MetricType))
+      .map(metric => metric.id as MetricType);
+    const customMetrics = enabledMetrics
+      .filter(metric => !metricKeys.includes(metric.id as MetricType))
+      .map(metric => metric.id);
+    
     return { defaultMetrics, customMetrics };
   };
 
@@ -155,7 +157,7 @@ export function DataTable() {
                   <TableHead key={key}>{metricLabels[key]}</TableHead>
                 ))}
                 {enabledCustomMetrics.map((customId) => {
-                  const customMetric = selectedProject?.customMetrics?.find(
+                  const customMetric = selectedProject?.metricsConfig?.find(
                     (m) => m.id === customId
                   );
                   return (

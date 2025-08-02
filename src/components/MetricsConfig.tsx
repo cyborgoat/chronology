@@ -1,356 +1,441 @@
 import { useState, useEffect } from 'react';
-import { Plus, X, Edit2, Check, RotateCcw } from 'lucide-react';
+import { Plus, X, RotateCcw } from 'lucide-react';
 import { useProjects } from '../contexts/ProjectContext';
-import { metricColors, metricLabels } from '../data/sampleData';
-import type { MetricType, CustomMetric as ProjectCustomMetric } from '../types';
+import type { MetricSettings, MetricValueType } from '../types';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
-const defaultMetrics: MetricType[] = ['accuracy', 'loss', 'precision', 'recall', 'f1Score'];
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function MetricsConfig() {
   const { selectedProject, updateProjectMetricsConfig } = useProjects();
-  const [customMetrics, setCustomMetrics] = useState<ProjectCustomMetric[]>([]);
-  const [enabledDefaultMetrics, setEnabledDefaultMetrics] = useState<Set<MetricType>>(
-    new Set(defaultMetrics)
-  );
-  const [newMetricName, setNewMetricName] = useState('');
-  const [editingMetric, setEditingMetric] = useState<string | null>(null);
-  const [editName, setEditName] = useState('');
+  const [metricsConfig, setMetricsConfig] = useState<MetricSettings[]>([]);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [newMetric, setNewMetric] = useState<Partial<MetricSettings>>({
+    name: '',
+    type: 'float',
+    color: '#3b82f6',
+    unit: '',
+    enabled: true,
+    description: ''
+  });
 
   // Load project's metrics configuration
   useEffect(() => {
     if (selectedProject) {
-      setCustomMetrics(selectedProject.customMetrics || []);
-      setEnabledDefaultMetrics(new Set(
-        (selectedProject.enabledDefaultMetrics || defaultMetrics) as MetricType[]
-      ));
+      setMetricsConfig(selectedProject.metricsConfig || []);
     }
   }, [selectedProject]);
 
   // Save changes to the project
   const saveChanges = () => {
     if (selectedProject) {
-      updateProjectMetricsConfig(
-        selectedProject.id, 
-        customMetrics, 
-        Array.from(enabledDefaultMetrics)
-      );
+      updateProjectMetricsConfig(selectedProject.id, metricsConfig);
     }
   };
 
-  const generateColor = () => {
-    const hue = Math.floor(Math.random() * 360);
-    return `hsl(${hue}, 70%, 50%)`;
+  // Auto-save when metrics config changes
+  useEffect(() => {
+    const timer = setTimeout(saveChanges, 500);
+    return () => clearTimeout(timer);
+  }, [metricsConfig, selectedProject]);
+
+  const toggleMetric = (metricId: string) => {
+    setMetricsConfig(prev => 
+      prev.map(metric => 
+        metric.id === metricId 
+          ? { ...metric, enabled: !metric.enabled }
+          : metric
+      )
+    );
+  };
+
+  const deleteCustomMetric = (metricId: string) => {
+    // Only allow deletion of custom metrics (not default ones)
+    const isDefaultMetric = ['accuracy', 'loss', 'precision', 'recall', 'f1Score'].includes(metricId);
+    if (!isDefaultMetric) {
+      setMetricsConfig(prev => prev.filter(metric => metric.id !== metricId));
+    }
   };
 
   const addCustomMetric = () => {
-    if (newMetricName.trim()) {
-      const newMetric: ProjectCustomMetric = {
-        id: `custom_${Date.now()}`,
-        name: newMetricName.trim(),
-        color: generateColor(),
-        enabled: true,
-      };
-      const updatedMetrics = [...customMetrics, newMetric];
-      setCustomMetrics(updatedMetrics);
-      setNewMetricName('');
-      // Auto-save
-      if (selectedProject) {
-        updateProjectMetricsConfig(
-          selectedProject.id, 
-          updatedMetrics, 
-          Array.from(enabledDefaultMetrics)
-        );
-      }
-    }
-  };
+    if (!newMetric.name?.trim()) return;
 
-  const removeCustomMetric = (id: string) => {
-    const updatedMetrics = customMetrics.filter(metric => metric.id !== id);
-    setCustomMetrics(updatedMetrics);
-    // Auto-save
-    if (selectedProject) {
-      updateProjectMetricsConfig(
-        selectedProject.id, 
-        updatedMetrics, 
-        Array.from(enabledDefaultMetrics)
-      );
-    }
-  };
+    const metric: MetricSettings = {
+      id: `custom_${Date.now()}`,
+      name: newMetric.name.trim(),
+      type: newMetric.type as MetricValueType,
+      color: newMetric.color || '#3b82f6',
+      unit: newMetric.unit || '',
+      enabled: true,
+      description: newMetric.description || ''
+    };
 
-  const toggleDefaultMetric = (metric: MetricType) => {
-    const newEnabled = new Set(enabledDefaultMetrics);
-    if (newEnabled.has(metric)) {
-      newEnabled.delete(metric);
-    } else {
-      newEnabled.add(metric);
+    if (newMetric.type === 'int' || newMetric.type === 'float' || newMetric.type === 'percentage') {
+      if (newMetric.min !== undefined) metric.min = newMetric.min;
+      if (newMetric.max !== undefined) metric.max = newMetric.max;
     }
-    setEnabledDefaultMetrics(newEnabled);
-    // Auto-save
-    if (selectedProject) {
-      updateProjectMetricsConfig(
-        selectedProject.id, 
-        customMetrics, 
-        Array.from(newEnabled)
-      );
-    }
-  };
 
-  const toggleCustomMetric = (id: string) => {
-    const updatedMetrics = customMetrics.map(metric =>
-      metric.id === id ? { ...metric, enabled: !metric.enabled } : metric
-    );
-    setCustomMetrics(updatedMetrics);
-    // Auto-save
-    if (selectedProject) {
-      updateProjectMetricsConfig(
-        selectedProject.id, 
-        updatedMetrics, 
-        Array.from(enabledDefaultMetrics)
-      );
-    }
-  };
-
-  const startEditing = (metric: ProjectCustomMetric) => {
-    setEditingMetric(metric.id);
-    setEditName(metric.name);
-  };
-
-  const saveEdit = () => {
-    if (editName.trim() && editingMetric) {
-      const updatedMetrics = customMetrics.map(metric =>
-        metric.id === editingMetric ? { ...metric, name: editName.trim() } : metric
-      );
-      setCustomMetrics(updatedMetrics);
-      setEditingMetric(null);
-      setEditName('');
-      // Auto-save
-      if (selectedProject) {
-        updateProjectMetricsConfig(
-          selectedProject.id, 
-          updatedMetrics, 
-          Array.from(enabledDefaultMetrics)
-        );
-      }
-    }
-  };
-
-  const cancelEdit = () => {
-    setEditingMetric(null);
-    setEditName('');
+    setMetricsConfig(prev => [...prev, metric]);
+    setNewMetric({
+      name: '',
+      type: 'float',
+      color: '#3b82f6',
+      unit: '',
+      enabled: true,
+      description: ''
+    });
+    setIsPopoverOpen(false);
   };
 
   const resetToDefaults = () => {
-    const newEnabledDefaults = new Set(defaultMetrics);
-    const emptyCustomMetrics: ProjectCustomMetric[] = [];
-    setEnabledDefaultMetrics(newEnabledDefaults);
-    setCustomMetrics(emptyCustomMetrics);
-    // Auto-save
-    if (selectedProject) {
-      updateProjectMetricsConfig(
-        selectedProject.id, 
-        emptyCustomMetrics, 
-        Array.from(newEnabledDefaults)
-      );
-    }
+    const defaultMetrics: MetricSettings[] = [
+      {
+        id: 'accuracy',
+        name: 'Accuracy',
+        type: 'percentage',
+        color: 'hsl(200, 100%, 50%)',
+        unit: '%',
+        enabled: true,
+        min: 0,
+        max: 1,
+        description: 'Model prediction accuracy'
+      },
+      {
+        id: 'loss',
+        name: 'Loss',
+        type: 'float',
+        color: 'hsl(0, 100%, 50%)',
+        unit: '',
+        enabled: true,
+        min: 0,
+        description: 'Training loss value'
+      },
+      {
+        id: 'precision',
+        name: 'Precision',
+        type: 'percentage',
+        color: 'hsl(120, 100%, 40%)',
+        unit: '%',
+        enabled: true,
+        min: 0,
+        max: 1,
+        description: 'Model precision score'
+      },
+      {
+        id: 'recall',
+        name: 'Recall',
+        type: 'percentage',
+        color: 'hsl(60, 100%, 50%)',
+        unit: '%',
+        enabled: true,
+        min: 0,
+        max: 1,
+        description: 'Model recall score'
+      },
+      {
+        id: 'f1Score',
+        name: 'F1 Score',
+        type: 'percentage',
+        color: 'hsl(280, 100%, 50%)',
+        unit: '%',
+        enabled: true,
+        min: 0,
+        max: 1,
+        description: 'F1 score metric'
+      }
+    ];
+    setMetricsConfig(defaultMetrics);
+  };
+
+  const isDefaultMetric = (metricId: string) => {
+    return ['accuracy', 'loss', 'precision', 'recall', 'f1Score'].includes(metricId);
   };
 
   if (!selectedProject) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center h-96">
-          <p className="text-muted-foreground text-lg">
-            Select a project to configure metrics
-          </p>
-        </CardContent>
-      </Card>
+      <div className="p-8 text-center text-gray-500">
+        Select a project to configure metrics
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Metrics Configuration</CardTitle>
-              <CardDescription>
-                Customize which metrics to track for {selectedProject.name}
-              </CardDescription>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={resetToDefaults}
-              className="flex items-center gap-2"
-            >
-              <RotateCcw className="w-4 h-4" />
-              Reset to Defaults
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Default Metrics Section */}
+    <div className="p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold mb-3">Default Metrics</h3>
-            <div className="flex flex-wrap gap-2">
-              {defaultMetrics.map((metric) => (
-                <button
-                  key={metric}
-                  onClick={() => toggleDefaultMetric(metric)}
-                  className={`inline-flex items-center gap-2 px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 ${
-                    enabledDefaultMetrics.has(metric)
-                      ? 'bg-primary text-primary-foreground border border-primary'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80 border border-muted'
-                  }`}
-                >
-                  <div
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: metricColors[metric] }}
-                  />
-                  {metricLabels[metric]}
-                </button>
-              ))}
-            </div>
+            <h2 className="text-xl font-semibold">Metrics Configuration</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Manage metrics for {selectedProject.name}
+            </p>
           </div>
-
-          {/* Custom Metrics Section */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Custom Metrics</h3>
-            
-            {/* Add New Metric */}
-            <div className="flex gap-2 mb-4">
-              <Input
-                placeholder="Enter metric name..."
-                value={newMetricName}
-                onChange={(e) => setNewMetricName(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && addCustomMetric()}
-                className="flex-1"
-              />
-              <Button
-                onClick={addCustomMetric}
-                disabled={!newMetricName.trim()}
-                className="flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Add
-              </Button>
-            </div>
-
-            {/* Custom Metrics List */}
-            {customMetrics.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {customMetrics.map((metric) => (
-                  <div
-                    key={metric.id}
-                    className={`p-3 rounded-lg border-2 transition-all duration-200 ${
-                      metric.enabled
-                        ? 'border-primary bg-primary/10'
-                        : 'border-muted bg-muted/30'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div 
-                        className="flex items-center gap-2 flex-1 cursor-pointer"
-                        onClick={() => toggleCustomMetric(metric.id)}
-                      >
-                        <div
-                          className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
-                          style={{ backgroundColor: metric.color }}
+          <div className="flex items-center gap-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="sm" onClick={resetToDefaults}>
+                    <RotateCcw className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <div className="text-xs">Reset to default metrics</div>
+                </TooltipContent>
+              </Tooltip>
+              <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <PopoverTrigger asChild>
+                      <Button size="sm">
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </PopoverTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="text-xs">Add custom metric</div>
+                  </TooltipContent>
+                </Tooltip>
+                <PopoverContent className="w-80" align="end">
+                  <div className="grid gap-4">
+                    <div className="space-y-2">
+                      <h4 className="font-medium leading-none">Add Custom Metric</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Define a new metric with properties.
+                      </p>
+                    </div>
+                    <div className="grid gap-3">
+                      <div className="grid grid-cols-3 items-center gap-4">
+                        <Label htmlFor="name" className="text-sm">Name</Label>
+                        <Input
+                          id="name"
+                          value={newMetric.name || ''}
+                          onChange={(e) => setNewMetric(prev => ({ ...prev, name: e.target.value }))}
+                          placeholder="BLEU Score"
+                          className="col-span-2 h-8"
                         />
-                        {editingMetric === metric.id ? (
-                          <Input
-                            value={editName}
-                            onChange={(e) => setEditName(e.target.value)}
-                            onKeyPress={(e) => {
-                              if (e.key === 'Enter') saveEdit();
-                              if (e.key === 'Escape') cancelEdit();
-                            }}
-                            className="h-6 text-sm"
-                            autoFocus
-                          />
-                        ) : (
-                          <span className={`text-sm font-medium ${
-                            metric.enabled ? 'text-primary' : 'text-muted-foreground'
-                          }`}>
-                            {metric.name}
-                          </span>
-                        )}
                       </div>
-                      <div className="flex items-center gap-1">
-                        {editingMetric === metric.id ? (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={saveEdit}
-                              className="h-6 w-6 p-0"
-                            >
-                              <Check className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={cancelEdit}
-                              className="h-6 w-6 p-0"
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => startEditing(metric)}
-                              className="h-6 w-6 p-0"
-                            >
-                              <Edit2 className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => removeCustomMetric(metric.id)}
-                              className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </>
-                        )}
+                      <div className="grid grid-cols-3 items-center gap-4">
+                        <Label htmlFor="type" className="text-sm">Type</Label>
+                        <Select 
+                          value={newMetric.type} 
+                          onValueChange={(value: MetricValueType) => setNewMetric(prev => ({ ...prev, type: value }))}
+                        >
+                          <SelectTrigger className="col-span-2 h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="int">Integer</SelectItem>
+                            <SelectItem value="float">Float</SelectItem>
+                            <SelectItem value="percentage">Percentage</SelectItem>
+                            <SelectItem value="string">String</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-3 items-center gap-4">
+                        <Label htmlFor="unit" className="text-sm">Unit</Label>
+                        <Input
+                          id="unit"
+                          value={newMetric.unit || ''}
+                          onChange={(e) => setNewMetric(prev => ({ ...prev, unit: e.target.value }))}
+                          placeholder="%, ms"
+                          className="col-span-2 h-8"
+                        />
+                      </div>
+                      <div className="grid grid-cols-3 items-center gap-4">
+                        <Label htmlFor="color" className="text-sm">Color</Label>
+                        <Input
+                          id="color"
+                          type="color"
+                          value={newMetric.color || '#3b82f6'}
+                          onChange={(e) => setNewMetric(prev => ({ ...prev, color: e.target.value }))}
+                          className="col-span-2 h-8"
+                        />
+                      </div>
+                      {(newMetric.type === 'int' || newMetric.type === 'float' || newMetric.type === 'percentage') && (
+                        <>
+                          <div className="grid grid-cols-3 items-center gap-4">
+                            <Label htmlFor="min" className="text-sm">Min</Label>
+                            <Input
+                              id="min"
+                              type="number"
+                              value={newMetric.min || ''}
+                              onChange={(e) => setNewMetric(prev => ({ ...prev, min: parseFloat(e.target.value) || undefined }))}
+                              placeholder="0"
+                              className="col-span-2 h-8"
+                            />
+                          </div>
+                          <div className="grid grid-cols-3 items-center gap-4">
+                            <Label htmlFor="max" className="text-sm">Max</Label>
+                            <Input
+                              id="max"
+                              type="number"
+                              value={newMetric.max || ''}
+                              onChange={(e) => setNewMetric(prev => ({ ...prev, max: parseFloat(e.target.value) || undefined }))}
+                              placeholder="1"
+                              className="col-span-2 h-8"
+                            />
+                          </div>
+                        </>
+                      )}
+                      <div className="flex gap-2 pt-2">
+                        <Button onClick={addCustomMetric} size="sm" className="flex-1">
+                          Add
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => setIsPopoverOpen(false)}>
+                          Cancel
+                        </Button>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>No custom metrics added yet.</p>
-                <p className="text-sm">Add your first custom metric above.</p>
-              </div>
-            )}
+                </PopoverContent>
+              </Popover>
+            </TooltipProvider>
           </div>
+        </div>
 
-          {/* Summary */}
-          <div className="pt-4 border-t">
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>
-                Active metrics: {enabledDefaultMetrics.size + customMetrics.filter(m => m.enabled).length}
-              </span>
-              <span>
-                Total available: {defaultMetrics.length + customMetrics.length}
-              </span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <TooltipProvider>
+              <div className="space-y-4">
+                {/* Default Metrics Section */}
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">Default Metrics</h3>
+                  <div className="space-y-2">
+                    {metricsConfig
+                      .filter(metric => isDefaultMetric(metric.id))
+                      .map((metric) => (
+                        <div
+                          key={metric.id}
+                          className="flex items-center justify-between py-1.5 px-2 rounded-md hover:bg-gray-50"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-2 h-2 rounded-full"
+                              style={{ backgroundColor: metric.color }}
+                            />
+                            <span className="text-sm font-medium">{metric.name}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant={metric.enabled ? "default" : "secondary"}
+                                  size="sm"
+                                  onClick={() => toggleMetric(metric.id)}
+                                  className="h-6 px-3 text-xs rounded-full"
+                                >
+                                  {metric.enabled ? "ON" : "OFF"}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div className="text-xs">
+                                  <div className="font-medium">{metric.name}</div>
+                                  <div>Type: {metric.type}</div>
+                                  {metric.unit && <div>Unit: {metric.unit}</div>}
+                                  {metric.description && <div>{metric.description}</div>}
+                                  {metric.min !== undefined && <div>Min: {metric.min}</div>}
+                                  {metric.max !== undefined && <div>Max: {metric.max}</div>}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+
+                {/* Custom Metrics Section */}
+                {metricsConfig.some(metric => !isDefaultMetric(metric.id)) && (
+                  <>
+                    <div className="border-t border-gray-200"></div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 mb-3">Custom Metrics</h3>
+                      <div className="space-y-2">
+                        {metricsConfig
+                          .filter(metric => !isDefaultMetric(metric.id))
+                          .map((metric) => (
+                            <div
+                              key={metric.id}
+                              className="flex items-center justify-between py-1.5 px-2 rounded-md hover:bg-gray-50"
+                            >
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="w-2 h-2 rounded-full"
+                                  style={{ backgroundColor: metric.color }}
+                                />
+                                <span className="text-sm font-medium">{metric.name}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant={metric.enabled ? "default" : "secondary"}
+                                      size="sm"
+                                      onClick={() => toggleMetric(metric.id)}
+                                      className="h-6 px-3 text-xs rounded-full"
+                                    >
+                                      {metric.enabled ? "ON" : "OFF"}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <div className="text-xs">
+                                      <div className="font-medium">{metric.name}</div>
+                                      <div>Type: {metric.type}</div>
+                                      {metric.unit && <div>Unit: {metric.unit}</div>}
+                                      {metric.description && <div>{metric.description}</div>}
+                                      {metric.min !== undefined && <div>Min: {metric.min}</div>}
+                                      {metric.max !== undefined && <div>Max: {metric.max}</div>}
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => deleteCustomMetric(metric.id)}
+                                      className="h-6 w-6 p-0 hover:bg-red-50 hover:text-red-600"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <div className="text-xs">Delete custom metric</div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </TooltipProvider>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

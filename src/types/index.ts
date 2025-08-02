@@ -11,11 +11,18 @@ export interface ProjectMetric {
   [key: string]: string | number | undefined;
 }
 
-export interface CustomMetric {
+export type MetricValueType = 'int' | 'float' | 'percentage' | 'string';
+
+export interface MetricSettings {
   id: string;
   name: string;
+  type: MetricValueType;
   color: string;
+  unit: string;
   enabled: boolean;
+  min?: number;
+  max?: number;
+  description?: string;
 }
 
 export interface Project {
@@ -26,8 +33,7 @@ export interface Project {
   updatedAt: string;
   metrics: ProjectMetric[];
   color: string;
-  customMetrics?: CustomMetric[];
-  enabledDefaultMetrics?: string[];
+  metricsConfig: MetricSettings[];
 }
 
 export interface ChartData {
