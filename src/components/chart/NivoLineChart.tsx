@@ -47,7 +47,7 @@ export function NivoLineChart({
       crosshairType="cross"
       tooltip={(props) => (
         <ChartTooltip
-          {...props}
+          point={props.point}
           selectedProject={selectedProject}
           chartViewMode={chartViewMode}
           selectedMetrics={selectedMetrics}

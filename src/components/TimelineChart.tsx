@@ -33,7 +33,7 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
   const getMetricLabel = (metricId: MetricType): string => {
     if (selectedProject?.metricsConfig) {
       const metricConfig = selectedProject.metricsConfig.find(m => m.id === metricId);
-      if (metricConfig) return metricConfig.name;
+      if (metricConfig?.name) return metricConfig.name;
     }
     return (metricLabels as any)[metricId] || metricId;
   };
@@ -42,7 +42,7 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
   const getMetricColor = (metricId: MetricType): string => {
     if (selectedProject?.metricsConfig) {
       const metricConfig = selectedProject.metricsConfig.find(m => m.id === metricId);
-      if (metricConfig) return metricConfig.color;
+      if (metricConfig?.color) return metricConfig.color;
     }
     return (metricColors as any)[metricId] || 'hsl(200, 70%, 50%)'; // default color for unknown metrics
   };

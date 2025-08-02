@@ -17,6 +17,21 @@ export function ChartTooltip({
   selectedMetricForComparison,
   getMetricLabel,
 }: ChartTooltipProps) {
+  // Safely extract and format the timestamp
+  const formatDate = (dateValue: any): string => {
+    if (!dateValue) return "Unknown";
+    
+    if (typeof dateValue === 'string') {
+      return new Date(dateValue).toLocaleDateString();
+    }
+    
+    if (dateValue instanceof Date) {
+      return dateValue.toLocaleDateString();
+    }
+    
+    return String(dateValue);
+  };
+
   const metricType =
     chartViewMode === "metric-wise"
       ? selectedMetrics.find((m) => getMetricLabel(m) === point.seriesId)
@@ -25,19 +40,27 @@ export function ChartTooltip({
   const modelName =
     chartViewMode === "metric-wise"
       ? selectedProject.metrics.find(
-          (m: any) =>
-            m.timestamp === point.data.x &&
-            m[metricType as MetricType] === point.data.y
+          (m: any) => {
+            // Handle both string and Date comparisons for x value
+            const pointX = point.data.x instanceof Date 
+              ? point.data.x.toISOString().split('T')[0] 
+              : String(point.data.x);
+            return m.timestamp === pointX && m[metricType as MetricType] === point.data.y;
+          }
         )?.modelName
       : point.seriesId;
 
   const timestamp = selectedProject.metrics.find(
-    (m: any) =>
-      m.timestamp === point.data.x &&
-      (chartViewMode === "metric-wise"
-        ? m[metricType as MetricType] === point.data.y
-        : m.modelName === modelName &&
-          m[metricType as MetricType] === point.data.y)
+    (m: any) => {
+      const pointX = point.data.x instanceof Date 
+        ? point.data.x.toISOString().split('T')[0] 
+        : String(point.data.x);
+      return m.timestamp === pointX &&
+        (chartViewMode === "metric-wise"
+          ? m[metricType as MetricType] === point.data.y
+          : m.modelName === modelName &&
+            m[metricType as MetricType] === point.data.y);
+    }
   )?.timestamp;
 
   return (
@@ -51,9 +74,7 @@ export function ChartTooltip({
             <strong>Date:</strong>
           </span>
           <span className="font-medium">
-            {timestamp
-              ? new Date(timestamp).toLocaleDateString()
-              : point.data.x}
+            {timestamp ? formatDate(timestamp) : formatDate(point.data.x)}
           </span>
         </div>
         <div className="flex justify-between">
@@ -89,7 +110,7 @@ export function ChartTooltip({
             <strong>Y-Axis:</strong> Metric Value
           </div>
           <div>
-            <strong>Series:</strong> {point.seriesId}
+            <strong>Series:</strong> {String(point.seriesId)}
           </div>
         </div>
       </div>

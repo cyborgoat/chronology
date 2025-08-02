@@ -49,6 +49,7 @@ export function MetricsConfig() {
   } = useProjects();
   const [metricsConfig, setMetricsConfig] = useState<MetricSettings[]>([]);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const [newMetric, setNewMetric] = useState<Partial<MetricSettings>>({
     name: '',
     type: 'float',
@@ -93,18 +94,24 @@ export function MetricsConfig() {
     }
   }, [metricsConfig, chartViewMode, setSelectedMetrics, setSelectedMetricForComparison]);
 
-  // Save changes to the project
-  const saveChanges = () => {
-    if (selectedProject) {
-      updateProjectMetricsConfig(selectedProject.id, metricsConfig);
-    }
-  };
-
   // Auto-save when metrics config changes
   useEffect(() => {
+    const saveChanges = async () => {
+      if (selectedProject && metricsConfig.length > 0) {
+        try {
+          await updateProjectMetricsConfig(selectedProject.id, metricsConfig);
+        } catch (error) {
+          console.error('Failed to save metrics configuration:', error);
+          setErrorMessage('Failed to save changes. Please try again.');
+          // Clear error after 5 seconds
+          setTimeout(() => setErrorMessage(''), 5000);
+        }
+      }
+    };
+
     const timer = setTimeout(saveChanges, 500);
     return () => clearTimeout(timer);
-  }, [metricsConfig, selectedProject]);
+  }, [metricsConfig, selectedProject, updateProjectMetricsConfig]);
 
   const toggleMetric = (metricId: string) => {
     // First, determine the current state to know what the new state will be
@@ -159,35 +166,72 @@ export function MetricsConfig() {
   };
 
   const addCustomMetric = () => {
-    if (!newMetric.name?.trim()) return;
+    // Clear previous error message
+    setErrorMessage('');
 
-    const metric: MetricSettings = {
-      id: `custom_${Date.now()}`,
-      name: newMetric.name.trim(),
-      type: newMetric.type as MetricValueType,
-      color: newMetric.color || '#3b82f6',
-      unit: newMetric.unit || '',
-      enabled: true,
-      description: newMetric.description || ''
-    };
-
-    if (newMetric.type === 'int' || newMetric.type === 'float' || newMetric.type === 'percentage') {
-      if (newMetric.min !== undefined) metric.min = newMetric.min;
-      if (newMetric.max !== undefined) metric.max = newMetric.max;
+    // Validation
+    if (!newMetric.name?.trim()) {
+      setErrorMessage('Metric name is required');
+      return;
     }
 
-    setMetricsConfig(prev => [...prev, metric]);
+    // Check if metric with same name already exists
+    const normalizedNewName = newMetric.name.trim().toLowerCase();
+    const existingMetric = metricsConfig.find(
+      metric => metric.name.toLowerCase() === normalizedNewName
+    );
     
-    // Reset form
-    setNewMetric({
-      name: '',
-      type: 'float',
-      color: '#3b82f6',
-      unit: '',
-      enabled: true,
-      description: ''
-    });
-    setIsPopoverOpen(false);
+    if (existingMetric) {
+      setErrorMessage(`A metric with the name "${newMetric.name.trim()}" already exists`);
+      return;
+    }
+
+    // Validate min/max for numeric types
+    if (newMetric.type === 'int' || newMetric.type === 'float' || newMetric.type === 'percentage') {
+      if (newMetric.min !== undefined && newMetric.max !== undefined && newMetric.min >= newMetric.max) {
+        setErrorMessage('Minimum value must be less than maximum value');
+        return;
+      }
+    }
+
+    try {
+      const metric: MetricSettings = {
+        id: `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name: newMetric.name.trim(),
+        type: newMetric.type as MetricValueType,
+        color: newMetric.color || '#3b82f6',
+        unit: newMetric.unit?.trim() || '',
+        enabled: true,
+        description: newMetric.description?.trim() || ''
+      };
+
+      // Only add min/max if they are actually provided
+      if (newMetric.type === 'int' || newMetric.type === 'float' || newMetric.type === 'percentage') {
+        if (newMetric.min !== undefined && newMetric.min !== null && !isNaN(newMetric.min)) {
+          metric.min = newMetric.min;
+        }
+        if (newMetric.max !== undefined && newMetric.max !== null && !isNaN(newMetric.max)) {
+          metric.max = newMetric.max;
+        }
+      }
+
+      setMetricsConfig(prev => [...prev, metric]);
+      
+      // Reset form
+      setNewMetric({
+        name: '',
+        type: 'float',
+        color: '#3b82f6',
+        unit: '',
+        enabled: true,
+        description: ''
+      });
+      setIsPopoverOpen(false);
+      setErrorMessage('');
+    } catch (error) {
+      setErrorMessage('Failed to add metric. Please try again.');
+      console.error('Error adding custom metric:', error);
+    }
   };
 
   const resetToDefaults = () => {
@@ -237,7 +281,13 @@ export function MetricsConfig() {
                   <div className="text-xs">Reset to default metrics</div>
                 </TooltipContent>
               </Tooltip>
-              <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+              <Popover open={isPopoverOpen} onOpenChange={(open) => {
+                setIsPopoverOpen(open);
+                if (open) {
+                  // Clear error message when opening
+                  setErrorMessage('');
+                }
+              }}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <PopoverTrigger asChild>
@@ -260,7 +310,7 @@ export function MetricsConfig() {
                     </div>
                     <div className="grid gap-3">
                       <div className="grid grid-cols-3 items-center gap-4">
-                        <Label htmlFor="name" className="text-sm">Name</Label>
+                        <Label htmlFor="name" className="text-sm">Name*</Label>
                         <Input
                           id="name"
                           value={newMetric.name || ''}
@@ -270,7 +320,7 @@ export function MetricsConfig() {
                         />
                       </div>
                       <div className="grid grid-cols-3 items-center gap-4">
-                        <Label htmlFor="type" className="text-sm">Type</Label>
+                        <Label htmlFor="type" className="text-sm">Type*</Label>
                         <Select 
                           value={newMetric.type} 
                           onValueChange={(value: MetricValueType) => setNewMetric(prev => ({ ...prev, type: value }))}
@@ -292,7 +342,17 @@ export function MetricsConfig() {
                           id="unit"
                           value={newMetric.unit || ''}
                           onChange={(e) => setNewMetric(prev => ({ ...prev, unit: e.target.value }))}
-                          placeholder="%, ms"
+                          placeholder="%, ms (optional)"
+                          className="col-span-2 h-8"
+                        />
+                      </div>
+                      <div className="grid grid-cols-3 items-center gap-4">
+                        <Label htmlFor="description" className="text-sm">Description</Label>
+                        <Input
+                          id="description"
+                          value={newMetric.description || ''}
+                          onChange={(e) => setNewMetric(prev => ({ ...prev, description: e.target.value }))}
+                          placeholder="Brief description (optional)"
                           className="col-span-2 h-8"
                         />
                       </div>
@@ -313,9 +373,16 @@ export function MetricsConfig() {
                             <Input
                               id="min"
                               type="number"
-                              value={newMetric.min || ''}
-                              onChange={(e) => setNewMetric(prev => ({ ...prev, min: parseFloat(e.target.value) || undefined }))}
-                              placeholder="0"
+                              step="any"
+                              value={newMetric.min !== undefined ? newMetric.min : ''}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setNewMetric(prev => ({ 
+                                  ...prev, 
+                                  min: value === '' ? undefined : parseFloat(value) 
+                                }));
+                              }}
+                              placeholder="optional"
                               className="col-span-2 h-8"
                             />
                           </div>
@@ -324,19 +391,34 @@ export function MetricsConfig() {
                             <Input
                               id="max"
                               type="number"
-                              value={newMetric.max || ''}
-                              onChange={(e) => setNewMetric(prev => ({ ...prev, max: parseFloat(e.target.value) || undefined }))}
-                              placeholder="1"
+                              step="any"
+                              value={newMetric.max !== undefined ? newMetric.max : ''}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setNewMetric(prev => ({ 
+                                  ...prev, 
+                                  max: value === '' ? undefined : parseFloat(value) 
+                                }));
+                              }}
+                              placeholder="optional"
                               className="col-span-2 h-8"
                             />
                           </div>
                         </>
                       )}
+                      {errorMessage && (
+                        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-2">
+                          {errorMessage}
+                        </div>
+                      )}
                       <div className="flex gap-2 pt-2">
                         <Button onClick={addCustomMetric} size="sm" className="flex-1">
                           Add
                         </Button>
-                        <Button variant="outline" size="sm" onClick={() => setIsPopoverOpen(false)}>
+                        <Button variant="outline" size="sm" onClick={() => {
+                          setIsPopoverOpen(false);
+                          setErrorMessage('');
+                        }}>
                           Cancel
                         </Button>
                       </div>
@@ -349,6 +431,11 @@ export function MetricsConfig() {
         </div>
       </CardHeader>
       <CardContent>
+        {errorMessage && !isPopoverOpen && (
+          <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
+            {errorMessage}
+          </div>
+        )}
             <TooltipProvider>
               <div className="space-y-4">
                 {/* Default Metrics Section */}
