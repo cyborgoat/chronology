@@ -1,4 +1,5 @@
 import { ResponsiveLine } from "@nivo/line";
+import { useEffect } from "react";
 import { useProjects } from "../contexts/ProjectContext";
 import { metricColors, metricLabels, modelColors } from "../data/sampleData";
 import type { ChartData, MetricType, ChartViewMode } from "../types";
@@ -28,16 +29,32 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
     getAvailableModels,
   } = useProjects();
 
-  const allMetrics: MetricType[] = [
-    "accuracy",
-    "loss",
-    "precision",
-    "recall",
-    "f1Score",
-  ];
+  // Get enabled metrics from project's metrics configuration
+  const enabledMetrics: MetricType[] = selectedProject?.metricsConfig
+    ? selectedProject.metricsConfig
+        .filter(metric => metric.enabled && ['accuracy', 'loss', 'precision', 'recall', 'f1Score'].includes(metric.id))
+        .map(metric => metric.id as MetricType)
+    : [];
+
   const availableModels = selectedProject
     ? getAvailableModels(selectedProject.id)
     : [];
+
+  // Filter out disabled metrics from selections when enabled metrics change
+  useEffect(() => {
+    if (enabledMetrics.length > 0) {
+      // Filter selectedMetrics to only include enabled metrics
+      const filteredSelectedMetrics = selectedMetrics.filter(metric => enabledMetrics.includes(metric));
+      if (filteredSelectedMetrics.length !== selectedMetrics.length) {
+        setSelectedMetrics(filteredSelectedMetrics);
+      }
+
+      // Check if selectedMetricForComparison is still enabled
+      if (selectedMetricForComparison && !enabledMetrics.includes(selectedMetricForComparison)) {
+        setSelectedMetricForComparison(enabledMetrics[0] || null);
+      }
+    }
+  }, [enabledMetrics, selectedMetrics, selectedMetricForComparison, setSelectedMetrics, setSelectedMetricForComparison]);
 
   const handleMetricToggle = (metric: MetricType) => {
     if (chartViewMode === "metric-wise") {
@@ -73,8 +90,8 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
       if (selectedModels.length === 0 && availableModels.length > 0) {
         setSelectedModels([availableModels[0]]);
       }
-      if (!selectedMetricForComparison) {
-        setSelectedMetricForComparison("accuracy");
+      if (!selectedMetricForComparison && enabledMetrics.length > 0) {
+        setSelectedMetricForComparison(enabledMetrics[0]);
       }
     } else {
       // When switching to metric-wise: ensure one model and multiple metrics
@@ -84,8 +101,8 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
         // If multiple models selected, keep only the first one
         setSelectedModels([selectedModels[0]]);
       }
-      if (selectedMetrics.length === 0) {
-        setSelectedMetrics(["accuracy", "loss"]);
+      if (selectedMetrics.length === 0 && enabledMetrics.length > 0) {
+        setSelectedMetrics(enabledMetrics.slice(0, 2)); // Select first two enabled metrics
       }
     }
   };
@@ -176,6 +193,11 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
 
   // Check if we should show empty state after selections are made
   const shouldShowEmptyState = () => {
+    // If no metrics are enabled, always show empty state
+    if (enabledMetrics.length === 0) {
+      return true;
+    }
+    
     if (chartViewMode === "metric-wise") {
       return selectedMetrics.length > 0 && !hasValidData();
     } else {
@@ -295,17 +317,19 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
                   <span className="text-sm font-medium">Metrics:</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setSelectedMetrics(allMetrics)}
-                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                      selectedMetrics.length === allMetrics.length
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
-                    }`}
-                  >
-                    All Metrics
-                  </button>
-                  {allMetrics.map((metric) => (
+                  {enabledMetrics.length > 0 && (
+                    <button
+                      onClick={() => setSelectedMetrics(enabledMetrics)}
+                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                        selectedMetrics.length === enabledMetrics.length
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      }`}
+                    >
+                      All Metrics
+                    </button>
+                  )}
+                  {enabledMetrics.map((metric) => (
                     <button
                       key={metric}
                       onClick={() => handleMetricToggle(metric)}
@@ -325,7 +349,9 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
                 </div>
                 {selectedMetrics.length === 0 && (
                   <p className="text-xs text-muted-foreground mt-2">
-                    Select metrics to display in the timeline
+                    {enabledMetrics.length === 0 
+                      ? "No metrics are enabled. Please enable metrics in the Metrics Configuration." 
+                      : "Select metrics to display in the timeline"}
                   </p>
                 )}
               </div>
@@ -376,23 +402,29 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
                   <span className="text-sm font-medium">Compare Metric:</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {allMetrics.map((metric) => (
-                    <button
-                      key={metric}
-                      onClick={() => handleMetricToggle(metric)}
-                      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                        selectedMetricForComparison === metric
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
-                      }`}
-                    >
-                      <div
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: metricColors[metric] }}
-                      />
-                      {metricLabels[metric]}
-                    </button>
-                  ))}
+                  {enabledMetrics.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      No metrics are enabled. Please enable metrics in the Metrics Configuration.
+                    </p>
+                  ) : (
+                    enabledMetrics.map((metric) => (
+                      <button
+                        key={metric}
+                        onClick={() => handleMetricToggle(metric)}
+                        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                          selectedMetricForComparison === metric
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        }`}
+                      >
+                        <div
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: metricColors[metric] }}
+                        />
+                        {metricLabels[metric]}
+                      </button>
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -448,7 +480,9 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
         {shouldShowEmptyState() ? (
           <div className="flex items-center justify-center h-96">
             <p className="text-muted-foreground text-lg">
-              {chartViewMode === "metric-wise"
+              {enabledMetrics.length === 0
+                ? "No metrics are enabled. Please enable metrics in the Metrics Configuration."
+                : chartViewMode === "metric-wise"
                 ? "No data available for selected metrics and models"
                 : "No data available for selected models and metric"}
             </p>

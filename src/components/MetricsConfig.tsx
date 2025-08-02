@@ -28,8 +28,21 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+// Helper function to check if a metric is a default metric
+const isDefaultMetric = (metricId: string) => {
+  return ['accuracy', 'loss', 'precision', 'recall', 'f1Score'].includes(metricId);
+};
+
 export function MetricsConfig() {
-  const { selectedProject, updateProjectMetricsConfig } = useProjects();
+  const { 
+    selectedProject, 
+    updateProjectMetricsConfig,
+    selectedMetrics,
+    setSelectedMetrics,
+    chartViewMode,
+    selectedMetricForComparison,
+    setSelectedMetricForComparison
+  } = useProjects();
   const [metricsConfig, setMetricsConfig] = useState<MetricSettings[]>([]);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [newMetric, setNewMetric] = useState<Partial<MetricSettings>>({
@@ -44,9 +57,92 @@ export function MetricsConfig() {
   // Load project's metrics configuration
   useEffect(() => {
     if (selectedProject) {
-      setMetricsConfig(selectedProject.metricsConfig || []);
+      const projectMetricsConfig = selectedProject.metricsConfig;
+      if (projectMetricsConfig && projectMetricsConfig.length > 0) {
+        setMetricsConfig(projectMetricsConfig);
+      } else {
+        // If no metrics config exists, initialize with default metrics
+        const defaultMetrics: MetricSettings[] = [
+          {
+            id: 'accuracy',
+            name: 'Accuracy',
+            type: 'percentage',
+            color: 'hsl(200, 100%, 50%)',
+            unit: '%',
+            enabled: true,
+            min: 0,
+            max: 1,
+            description: 'Model prediction accuracy'
+          },
+          {
+            id: 'loss',
+            name: 'Loss',
+            type: 'float',
+            color: 'hsl(0, 100%, 50%)',
+            unit: '',
+            enabled: true,
+            min: 0,
+            description: 'Training loss value'
+          },
+          {
+            id: 'precision',
+            name: 'Precision',
+            type: 'percentage',
+            color: 'hsl(120, 100%, 40%)',
+            unit: '%',
+            enabled: true,
+            min: 0,
+            max: 1,
+            description: 'Model precision score'
+          },
+          {
+            id: 'recall',
+            name: 'Recall',
+            type: 'percentage',
+            color: 'hsl(60, 100%, 50%)',
+            unit: '%',
+            enabled: true,
+            min: 0,
+            max: 1,
+            description: 'Model recall score'
+          },
+          {
+            id: 'f1Score',
+            name: 'F1 Score',
+            type: 'percentage',
+            color: 'hsl(280, 100%, 50%)',
+            unit: '%',
+            enabled: true,
+            min: 0,
+            max: 1,
+            description: 'F1 score metric'
+          }
+        ];
+        setMetricsConfig(defaultMetrics);
+        // Save the default metrics to the project
+        updateProjectMetricsConfig(selectedProject.id, defaultMetrics);
+      }
     }
-  }, [selectedProject]);
+  }, [selectedProject, updateProjectMetricsConfig]);
+
+  // Sync with TimelineChart selections when metrics config or chart mode changes
+  useEffect(() => {
+    if (metricsConfig.length > 0) {
+      const enabledDefaultMetrics = metricsConfig
+        .filter(metric => isDefaultMetric(metric.id) && metric.enabled)
+        .map(metric => metric.id as any); // Cast to MetricType
+
+      if (chartViewMode === 'metric-wise') {
+        // Update selectedMetrics to match enabled metrics
+        setSelectedMetrics(enabledDefaultMetrics);
+      } else {
+        // For model-wise view, if current selectedMetricForComparison is not enabled, pick the first enabled one
+        if (!selectedMetricForComparison || !enabledDefaultMetrics.includes(selectedMetricForComparison)) {
+          setSelectedMetricForComparison(enabledDefaultMetrics[0] || null);
+        }
+      }
+    }
+  }, [metricsConfig, chartViewMode, setSelectedMetrics, setSelectedMetricForComparison]);
 
   // Save changes to the project
   const saveChanges = () => {
@@ -62,6 +158,11 @@ export function MetricsConfig() {
   }, [metricsConfig, selectedProject]);
 
   const toggleMetric = (metricId: string) => {
+    // First, determine the current state to know what the new state will be
+    const currentMetric = metricsConfig.find(m => m.id === metricId);
+    const willBeEnabled = !currentMetric?.enabled;
+
+    // Update the metrics config
     setMetricsConfig(prev => 
       prev.map(metric => 
         metric.id === metricId 
@@ -69,12 +170,41 @@ export function MetricsConfig() {
           : metric
       )
     );
+
+    // Sync with TimelineChart selections based on the new state
+    if (isDefaultMetric(metricId)) {
+      const metricKey = metricId as any; // Cast to MetricType
+      if (chartViewMode === 'metric-wise') {
+        // Update selectedMetrics for metric-wise view
+        if (willBeEnabled) {
+          // If will be enabled, add to selection
+          setSelectedMetrics([...selectedMetrics, metricKey]);
+        } else {
+          // If will be disabled, remove from selection
+          setSelectedMetrics(selectedMetrics.filter(m => m !== metricKey));
+        }
+      } else {
+        // Update selectedMetricForComparison for model-wise view
+        if (willBeEnabled) {
+          // If will be enabled, set as the selected metric for comparison
+          setSelectedMetricForComparison(metricKey);
+        } else {
+          // If will be disabled and it's the selected metric for comparison, clear it
+          if (selectedMetricForComparison === metricKey) {
+            // Find another enabled metric to set as comparison, or set to null
+            const otherEnabledMetrics = metricsConfig
+              .filter(m => isDefaultMetric(m.id) && m.enabled && m.id !== metricId)
+              .map(m => m.id as any);
+            setSelectedMetricForComparison(otherEnabledMetrics[0] || null);
+          }
+        }
+      }
+    }
   };
 
   const deleteCustomMetric = (metricId: string) => {
     // Only allow deletion of custom metrics (not default ones)
-    const isDefaultMetric = ['accuracy', 'loss', 'precision', 'recall', 'f1Score'].includes(metricId);
-    if (!isDefaultMetric) {
+    if (!isDefaultMetric(metricId)) {
       setMetricsConfig(prev => prev.filter(metric => metric.id !== metricId));
     }
   };
@@ -98,6 +228,8 @@ export function MetricsConfig() {
     }
 
     setMetricsConfig(prev => [...prev, metric]);
+    
+    // Reset form
     setNewMetric({
       name: '',
       type: 'float',
@@ -167,10 +299,14 @@ export function MetricsConfig() {
       }
     ];
     setMetricsConfig(defaultMetrics);
-  };
-
-  const isDefaultMetric = (metricId: string) => {
-    return ['accuracy', 'loss', 'precision', 'recall', 'f1Score'].includes(metricId);
+    
+    // Sync with TimelineChart immediately after reset
+    const allDefaultMetrics = defaultMetrics.map(m => m.id as any);
+    if (chartViewMode === 'metric-wise') {
+      setSelectedMetrics(allDefaultMetrics);
+    } else {
+      setSelectedMetricForComparison(allDefaultMetrics[0] || null);
+    }
   };
 
   if (!selectedProject) {
@@ -321,46 +457,41 @@ export function MetricsConfig() {
                 {/* Default Metrics Section */}
                 <div>
                   <h3 className="text-sm font-medium text-gray-700 mb-3">Default Metrics</h3>
-                  <div className="space-y-2">
+                  <div className="flex flex-wrap gap-2">
                     {metricsConfig
                       .filter(metric => isDefaultMetric(metric.id))
                       .map((metric) => (
-                        <div
-                          key={metric.id}
-                          className="flex items-center justify-between py-1.5 px-2 rounded-md hover:bg-gray-50"
-                        >
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-2 h-2 rounded-full"
-                              style={{ backgroundColor: metric.color }}
-                            />
-                            <span className="text-sm font-medium">{metric.name}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant={metric.enabled ? "default" : "secondary"}
-                                  size="sm"
-                                  onClick={() => toggleMetric(metric.id)}
-                                  className="h-6 px-3 text-xs rounded-full"
-                                >
-                                  {metric.enabled ? "ON" : "OFF"}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <div className="text-xs">
-                                  <div className="font-medium">{metric.name}</div>
-                                  <div>Type: {metric.type}</div>
-                                  {metric.unit && <div>Unit: {metric.unit}</div>}
-                                  {metric.description && <div>{metric.description}</div>}
-                                  {metric.min !== undefined && <div>Min: {metric.min}</div>}
-                                  {metric.max !== undefined && <div>Max: {metric.max}</div>}
-                                </div>
-                              </TooltipContent>
-                            </Tooltip>
-                          </div>
-                        </div>
+                        <Tooltip key={metric.id}>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => toggleMetric(metric.id)}
+                              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                                metric.enabled
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                              }`}
+                            >
+                              <div
+                                className="w-2 h-2 rounded-full"
+                                style={{ backgroundColor: metric.color }}
+                              />
+                              {metric.name}
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="text-xs">
+                              <div className="font-medium">{metric.name}</div>
+                              <div>Type: {metric.type}</div>
+                              {metric.unit && <div>Unit: {metric.unit}</div>}
+                              {metric.description && <div>{metric.description}</div>}
+                              {metric.min !== undefined && <div>Min: {metric.min}</div>}
+                              {metric.max !== undefined && <div>Max: {metric.max}</div>}
+                              <div className="mt-1 pt-1 border-t border-gray-200">
+                                <div>Status: {metric.enabled ? "Enabled" : "Disabled"}</div>
+                              </div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
                       ))}
                   </div>
                 </div>
@@ -371,60 +502,57 @@ export function MetricsConfig() {
                     <div className="border-t border-gray-200"></div>
                     <div>
                       <h3 className="text-sm font-medium text-gray-700 mb-3">Custom Metrics</h3>
-                      <div className="space-y-2">
+                      <div className="flex flex-wrap gap-2">
                         {metricsConfig
                           .filter(metric => !isDefaultMetric(metric.id))
                           .map((metric) => (
-                            <div
-                              key={metric.id}
-                              className="flex items-center justify-between py-1.5 px-2 rounded-md hover:bg-gray-50"
-                            >
-                              <div className="flex items-center gap-2">
-                                <div
-                                  className="w-2 h-2 rounded-full"
-                                  style={{ backgroundColor: metric.color }}
-                                />
-                                <span className="text-sm font-medium">{metric.name}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant={metric.enabled ? "default" : "secondary"}
-                                      size="sm"
-                                      onClick={() => toggleMetric(metric.id)}
-                                      className="h-6 px-3 text-xs rounded-full"
-                                    >
-                                      {metric.enabled ? "ON" : "OFF"}
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <div className="text-xs">
-                                      <div className="font-medium">{metric.name}</div>
-                                      <div>Type: {metric.type}</div>
-                                      {metric.unit && <div>Unit: {metric.unit}</div>}
-                                      {metric.description && <div>{metric.description}</div>}
-                                      {metric.min !== undefined && <div>Min: {metric.min}</div>}
-                                      {metric.max !== undefined && <div>Max: {metric.max}</div>}
+                            <div key={metric.id} className="flex items-center gap-1">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    onClick={() => toggleMetric(metric.id)}
+                                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                                      metric.enabled
+                                        ? "bg-primary text-primary-foreground"
+                                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                                    }`}
+                                  >
+                                    <div
+                                      className="w-2 h-2 rounded-full"
+                                      style={{ backgroundColor: metric.color }}
+                                    />
+                                    {metric.name}
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <div className="text-xs">
+                                    <div className="font-medium">{metric.name}</div>
+                                    <div>Type: {metric.type}</div>
+                                    {metric.unit && <div>Unit: {metric.unit}</div>}
+                                    {metric.description && <div>{metric.description}</div>}
+                                    {metric.min !== undefined && <div>Min: {metric.min}</div>}
+                                    {metric.max !== undefined && <div>Max: {metric.max}</div>}
+                                    <div className="mt-1 pt-1 border-t border-gray-200">
+                                      <div>Status: {metric.enabled ? "Enabled" : "Disabled"}</div>
                                     </div>
-                                  </TooltipContent>
-                                </Tooltip>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => deleteCustomMetric(metric.id)}
-                                      className="h-6 w-6 p-0 hover:bg-red-50 hover:text-red-600"
-                                    >
-                                      <X className="w-3 h-3" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <div className="text-xs">Delete custom metric</div>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </div>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => deleteCustomMetric(metric.id)}
+                                    className="h-6 w-6 p-0 hover:bg-red-50 hover:text-red-600 rounded-full"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <div className="text-xs">Delete custom metric</div>
+                                </TooltipContent>
+                              </Tooltip>
                             </div>
                           ))}
                       </div>
