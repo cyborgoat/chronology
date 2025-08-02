@@ -29,6 +29,18 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
     getAvailableModels,
   } = useProjects();
 
+  // Debug logging
+  console.log('TimelineChart Debug:', {
+    selectedProject: selectedProject?.id,
+    selectedProjectName: selectedProject?.name,
+    recordsCount: selectedProject?.records?.length,
+    firstRecord: selectedProject?.records?.[0],
+    selectedMetrics,
+    selectedModels,
+    chartViewMode,
+    selectedMetricForComparison,
+  });
+
   // Helper function to get metric label (from config or fallback to default)
   const getMetricLabel = (metricId: MetricType): string => {
     if (selectedProject?.metricsConfig) {
@@ -59,6 +71,11 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
   const availableModels = selectedProject
     ? getAvailableModels(selectedProject.id)
     : [];
+
+  console.log('TimelineChart computed values:', {
+    enabledMetrics,
+    availableModels,
+  });
 
   // Filter out disabled metrics from selections when enabled metrics change
   useEffect(() => {
@@ -211,7 +228,7 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
             m.timestamp === point.data.x && m[metricType] === point.data.y
         );
         timestamp = matchingRecord?.timestamp;
-        modelName = matchingRecord?.modelName;
+        modelName = matchingRecord?.modelName as string;
       } else {
         metricType = selectedMetricForComparison!;
         modelName = point.seriesId;

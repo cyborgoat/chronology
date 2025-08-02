@@ -11,6 +11,8 @@ export const CHART_CONFIG = {
     type: "time" as const,
     format: "%Y-%m-%d",
     useUTC: false,
+    min: "auto" as const,
+    max: "auto" as const,
   },
   yScale: {
     type: "linear" as const,
@@ -27,6 +29,7 @@ export const CHART_CONFIG = {
     legendOffset: 60,
     legendPosition: "middle" as const,
     format: "%b %d, %Y",
+    tickValues: "every 1 month" as const,
   },
   axisLeft: {
     tickSize: 5,
@@ -66,15 +69,18 @@ export const CHART_CONFIG = {
 // Utility to strictly validate timestamps for Nivo time scale
 export function isValidTimestamp(ts: unknown): ts is string {
   if (typeof ts !== "string" || !ts.trim()) return false;
-  // Check if it matches YYYY-MM-DD format
-  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  if (!dateRegex.test(ts)) return false;
-  const d = new Date(ts);
-  return !isNaN(d.getTime());
+  
+  // Handle both ISO format (2024-01-01T00:00:00) and date-only format (2024-01-01)
+  const date = new Date(ts);
+  return !isNaN(date.getTime());
 }
 
 // Format timestamp for Nivo (ensure consistent format)
 export function formatTimestampForChart(timestamp: string): string {
   const date = new Date(timestamp);
+  if (isNaN(date.getTime())) {
+    console.warn(`Invalid timestamp: ${timestamp}`);
+    return new Date().toISOString().split('T')[0]; // fallback to today
+  }
   return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD format
 }

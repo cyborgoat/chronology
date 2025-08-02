@@ -1,31 +1,195 @@
 import json
-from pathlib import Path
+from datetime import datetime
 from typing import List, Optional
-from .models import Project
+from sqlalchemy.orm import Session
+from .models import ProjectDB, ProjectMetricDB, MetricSettingsDB, Project, ProjectMetric, MetricSettings
+from .database import get_db
 
-DATA_DIR = Path(__file__).parent / "data"
-DATA_DIR.mkdir(exist_ok=True)
-PROJECTS_FILE = DATA_DIR / "projects.json"
+# Database operations for projects
+def create_project(db: Session, project_data: dict) -> ProjectDB:
+    db_project = ProjectDB(**project_data)
+    db.add(db_project)
+    db.commit()
+    db.refresh(db_project)
+    return db_project
 
-# Helper to load all projects
+def get_all_projects(db: Session) -> List[ProjectDB]:
+    return db.query(ProjectDB).all()
 
-def load_projects() -> List[Project]:
-    if not PROJECTS_FILE.exists():
-        return []
-    with open(PROJECTS_FILE, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    return [Project(**item) for item in data]
+def get_project_by_id(db: Session, project_id: str) -> Optional[ProjectDB]:
+    return db.query(ProjectDB).filter(ProjectDB.id == project_id).first()
 
-# Helper to save all projects
+def update_project(db: Session, project_id: str, project_data: dict) -> Optional[ProjectDB]:
+    db_project = get_project_by_id(db, project_id)
+    if not db_project:
+        return None
+    
+    for key, value in project_data.items():
+        if hasattr(db_project, key):
+            setattr(db_project, key, value)
+    
+    db_project.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(db_project)
+    return db_project
 
-def save_projects(projects: List[Project]):
-    with open(PROJECTS_FILE, "w", encoding="utf-8") as f:
-        json.dump([p.dict() for p in projects], f, indent=2)
+def delete_project(db: Session, project_id: str) -> bool:
+    db_project = get_project_by_id(db, project_id)
+    if not db_project:
+        return False
+    
+    db.delete(db_project)
+    db.commit()
+    return True
 
-# Helper to get a single project
+# Database operations for metrics
+def create_metric(db: Session, metric_data: dict) -> ProjectMetricDB:
+    db_metric = ProjectMetricDB(**metric_data)
+    db.add(db_metric)
+    db.commit()
+    db.refresh(db_metric)
+    return db_metric
 
-def get_project(project_id: str) -> Optional[Project]:
-    for project in load_projects():
-        if project.id == project_id:
-            return project
-    return None
+def get_project_metrics(db: Session, project_id: str) -> List[ProjectMetricDB]:
+    return db.query(ProjectMetricDB).filter(ProjectMetricDB.project_id == project_id).all()
+
+def get_metric_by_id(db: Session, metric_id: str) -> Optional[ProjectMetricDB]:
+    return db.query(ProjectMetricDB).filter(ProjectMetricDB.id == metric_id).first()
+
+def update_metric(db: Session, metric_id: str, metric_data: dict) -> Optional[ProjectMetricDB]:
+    db_metric = get_metric_by_id(db, metric_id)
+    if not db_metric:
+        return None
+    
+    for key, value in metric_data.items():
+        if hasattr(db_metric, key):
+            setattr(db_metric, key, value)
+    
+    db.commit()
+    db.refresh(db_metric)
+    return db_metric
+
+def delete_metric(db: Session, metric_id: str) -> bool:
+    db_metric = get_metric_by_id(db, metric_id)
+    if not db_metric:
+        return False
+    
+    db.delete(db_metric)
+    db.commit()
+    return True
+
+# Database operations for metric settings
+def create_metric_settings(db: Session, settings_data: dict) -> MetricSettingsDB:
+    db_settings = MetricSettingsDB(**settings_data)
+    db.add(db_settings)
+    db.commit()
+    db.refresh(db_settings)
+    return db_settings
+
+def get_project_metric_settings(db: Session, project_id: str) -> List[MetricSettingsDB]:
+    return db.query(MetricSettingsDB).filter(MetricSettingsDB.project_id == project_id).all()
+
+def update_project_metric_settings(db: Session, project_id: str, settings_list: List[dict]) -> List[MetricSettingsDB]:
+    # Delete existing settings for this project
+    db.query(MetricSettingsDB).filter(MetricSettingsDB.project_id == project_id).delete()
+    
+    # Create new settings
+    new_settings = []
+    for settings_data in settings_list:
+        settings_data['project_id'] = project_id
+        db_settings = create_metric_settings(db, settings_data)
+        new_settings.append(db_settings)
+    
+    return new_settings
+
+# Conversion functions between DB models and Pydantic models
+def db_project_to_pydantic(db_project: ProjectDB) -> Project:
+    """Convert database project to Pydantic model"""
+    # Get metrics for this project
+    metrics = []
+    for db_metric in db_project.metrics:
+        metric_dict = {
+            'id': db_metric.id,
+            'projectId': db_metric.project_id,
+            'timestamp': db_metric.timestamp.isoformat(),
+            'modelName': db_metric.model_name,
+            'modelVersion': db_metric.model_version,
+            'accuracy': db_metric.accuracy,
+            'loss': db_metric.loss,
+            'precision': db_metric.precision,
+            'recall': db_metric.recall,
+            'f1Score': db_metric.f1_score,
+            'additionalMetrics': json.loads(db_metric.additional_metrics) if db_metric.additional_metrics else None
+        }
+        metrics.append(ProjectMetric(**metric_dict))
+    
+    # Get metric settings for this project
+    settings = []
+    for db_setting in db_project.metrics_config:
+        setting_dict = {
+            'id': db_setting.metric_id,
+            'name': db_setting.name,
+            'type': db_setting.type,
+            'color': db_setting.color,
+            'unit': db_setting.unit,
+            'enabled': db_setting.enabled,
+            'min': db_setting.min_value,
+            'max': db_setting.max_value,
+            'description': db_setting.description
+        }
+        settings.append(MetricSettings(**setting_dict))
+    
+    project_dict = {
+        'id': db_project.id,
+        'name': db_project.name,
+        'description': db_project.description,
+        'createdAt': db_project.created_at.isoformat(),
+        'updatedAt': db_project.updated_at.isoformat(),
+        'records': metrics,
+        'color': db_project.color,
+        'metricsConfig': settings
+    }
+    
+    return Project(**project_dict)
+
+def pydantic_project_to_db(project: Project) -> dict:
+    """Convert Pydantic project to database model dict"""
+    return {
+        'id': project.id,
+        'name': project.name,
+        'description': project.description,
+        'created_at': datetime.fromisoformat(project.createdAt),
+        'updated_at': datetime.fromisoformat(project.updatedAt),
+        'color': project.color
+    }
+
+def pydantic_metric_to_db(metric: ProjectMetric) -> dict:
+    """Convert Pydantic metric to database model dict"""
+    return {
+        'id': metric.id,
+        'project_id': metric.projectId,
+        'timestamp': datetime.fromisoformat(metric.timestamp),
+        'model_name': metric.modelName,
+        'model_version': metric.modelVersion,
+        'accuracy': metric.accuracy,
+        'loss': metric.loss,
+        'precision': metric.precision,
+        'recall': metric.recall,
+        'f1_score': metric.f1Score,
+        'additional_metrics': json.dumps(metric.additionalMetrics) if metric.additionalMetrics else None
+    }
+
+def pydantic_setting_to_db(setting: MetricSettings, project_id: str) -> dict:
+    """Convert Pydantic metric setting to database model dict"""
+    return {
+        'project_id': project_id,
+        'metric_id': setting.id,
+        'name': setting.name,
+        'type': setting.type,
+        'color': setting.color,
+        'unit': setting.unit,
+        'enabled': setting.enabled,
+        'min_value': setting.min,
+        'max_value': setting.max,
+        'description': setting.description
+    }

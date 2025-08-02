@@ -379,7 +379,7 @@ export function DataTable() {
                       <Input
                         type="number"
                         step="0.001"
-                        value={newMetric[customId] || ""}
+                        value={(newMetric as any)[customId] || ""}
                         onChange={(e) =>
                           setNewMetric((prev) => ({
                             ...prev,
