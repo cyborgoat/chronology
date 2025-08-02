@@ -121,7 +121,7 @@ export function DataTable() {
   } = getAvailableMetrics();
 
   // Sort metrics by model name and then by date
-  const sortedMetrics = selectedProject.metrics.sort((a, b) => {
+  const sortedMetrics = selectedProject.records.sort((a, b) => {
     const modelComparison = (a.modelName || "").localeCompare(
       b.modelName || ""
     );
@@ -425,7 +425,7 @@ export function DataTable() {
           </Table>
         </div>
 
-        {selectedProject.metrics.length === 0 && !showAddForm && (
+        {selectedProject.records.length === 0 && !showAddForm && (
           <div className="text-center py-8 text-muted-foreground">
             No data available. Click "Add Data" to get started by adding model
             performance data.

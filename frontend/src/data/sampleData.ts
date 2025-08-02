@@ -68,7 +68,7 @@ export const sampleProjects: Project[] = [
     updatedAt: '2024-06-30',
     color: 'hsl(200, 100%, 50%)',
     metricsConfig: getDefaultMetrics(),
-    metrics: [
+    records: [
       // ResNet-50 model
       { id: '1-1', timestamp: '2024-01-01', modelName: 'ResNet-50', accuracy: 0.75, loss: 0.65, precision: 0.73, recall: 0.72, f1Score: 0.725 },
       { id: '1-2', timestamp: '2024-02-01', modelName: 'ResNet-50', accuracy: 0.82, loss: 0.48, precision: 0.80, recall: 0.79, f1Score: 0.795 },
@@ -93,7 +93,7 @@ export const sampleProjects: Project[] = [
     updatedAt: '2024-06-30',
     color: 'hsl(120, 100%, 40%)',
     metricsConfig: getDefaultMetrics(),
-    metrics: [
+    records: [
       // BERT model
       { id: '2-1', timestamp: '2024-02-15', modelName: 'BERT-base', accuracy: 0.68, loss: 0.78, precision: 0.65, recall: 0.67, f1Score: 0.66 },
       { id: '2-2', timestamp: '2024-03-15', modelName: 'BERT-base', accuracy: 0.76, loss: 0.58, precision: 0.74, recall: 0.75, f1Score: 0.745 },
@@ -118,7 +118,7 @@ export const sampleProjects: Project[] = [
     updatedAt: '2024-06-30',
     color: 'hsl(300, 100%, 50%)',
     metricsConfig: getDefaultMetrics(),
-    metrics: [
+    records: [
       // LSTM model
       { id: '3-1', timestamp: '2024-03-01', modelName: 'LSTM', accuracy: 0.62, loss: 0.85, precision: 0.60, recall: 0.63, f1Score: 0.615 },
       { id: '3-2', timestamp: '2024-04-01', modelName: 'LSTM', accuracy: 0.71, loss: 0.68, precision: 0.69, recall: 0.72, f1Score: 0.705 },

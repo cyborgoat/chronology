@@ -236,7 +236,7 @@ export function useProjects(): UseProjectsReturn {
     const targetProject = projectId ? projects.find(p => p.id === projectId) : selectedProject;
     if (!targetProject) return [];
     
-    const modelNames = [...new Set(targetProject.metrics.map(m => m.modelName))];
+    const modelNames = [...new Set(targetProject.records.map(m => m.modelName))];
     return modelNames;
   }, [projects, selectedProject]);
 

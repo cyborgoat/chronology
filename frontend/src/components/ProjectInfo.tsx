@@ -35,7 +35,7 @@ export function ProjectInfo() {
         <div className="flex items-center justify-center gap-8 text-sm text-muted-foreground">
           <div className="flex items-center gap-2 hover:text-foreground transition-colors">
             <Folder className="w-4 h-4" />
-            <span>{selectedProject.metrics.length} metrics recorded</span>
+            <span>{selectedProject.records.length} metrics recorded</span>
           </div>
           <div className="flex items-center gap-2 hover:text-foreground transition-colors">
             <Calendar className="w-4 h-4" />

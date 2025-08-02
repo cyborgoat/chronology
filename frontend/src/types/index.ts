@@ -31,7 +31,7 @@ export interface Project {
   description: string;
   createdAt: string;
   updatedAt: string;
-  metrics: ProjectMetric[];
+  records: ProjectMetric[]; // Renamed from 'metrics' to 'records' to clarify meaning
   color: string;
   metricsConfig: MetricSettings[];
 }

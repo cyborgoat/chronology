@@ -6,11 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export function ProjectStats() {
   const { selectedProject, selectedMetrics } = useProjects();
 
-  if (!selectedProject || selectedProject.metrics.length === 0) {
+  if (!selectedProject || selectedProject.records.length === 0) {
     return null;
   }
 
-  const sortedMetrics = [...selectedProject.metrics].sort((a, b) => 
+  const sortedMetrics = [...selectedProject.records].sort((a, b) => 
     new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   );
 
@@ -86,7 +86,7 @@ export function ProjectStats() {
           <Calendar className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{selectedProject.metrics.length}</div>
+          <div className="text-2xl font-bold">{selectedProject.records.length}</div>
           <p className="text-xs text-muted-foreground">
             Data points recorded
           </p>

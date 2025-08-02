@@ -142,7 +142,7 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
     if (chartViewMode === "metric-wise") {
       return (
         selectedMetrics.length > 0 &&
-        selectedProject.metrics.some(
+        selectedProject.records.some(
           (m) =>
             selectedMetrics.some((metric) => m[metric] !== undefined) &&
             (selectedModels.length === 0 ||
@@ -153,7 +153,7 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
       return (
         selectedModels.length > 0 &&
         selectedMetricForComparison &&
-        selectedProject.metrics.some(
+        selectedProject.records.some(
           (m) =>
             selectedModels.includes(m.modelName) &&
             m[selectedMetricForComparison] !== undefined
@@ -204,22 +204,22 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
           (m) => getMetricLabel(m) === point.seriesId
         ) as MetricType;
         // Find the metric entry that matches this point
-        const matchingMetric = selectedProject.metrics.find(
+        const matchingRecord = selectedProject.records.find(
           (m) =>
             m.timestamp === point.data.x && m[metricType] === point.data.y
         );
-        timestamp = matchingMetric?.timestamp;
-        modelName = matchingMetric?.modelName;
+        timestamp = matchingRecord?.timestamp;
+        modelName = matchingRecord?.modelName;
       } else {
         metricType = selectedMetricForComparison!;
         modelName = point.seriesId;
-        const matchingMetric = selectedProject.metrics.find(
+        const matchingRecord = selectedProject.records.find(
           (m) =>
             m.modelName === modelName &&
             m.timestamp === point.data.x &&
             m[metricType] === point.data.y
         );
-        timestamp = matchingMetric?.timestamp;
+        timestamp = matchingRecord?.timestamp;
       }
 
       onPointClick({

@@ -89,7 +89,7 @@ export class MetricsApi {
 
     const updatedProject = {
       ...projectsDatabase[projectIndex],
-      metrics: [...projectsDatabase[projectIndex].metrics, newMetric].sort((a, b) => 
+      records: [...projectsDatabase[projectIndex].records, newMetric].sort((a, b) => 
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
       ),
       updatedAt: new Date().toISOString(),
@@ -105,17 +105,17 @@ export class MetricsApi {
     const projectIndex = projectsDatabase.findIndex(p => p.id === projectId);
     if (projectIndex === -1) return null;
 
-    const metricIndex = projectsDatabase[projectIndex].metrics.findIndex(m => m.id === metricId);
+    const metricIndex = projectsDatabase[projectIndex].records.findIndex(m => m.id === metricId);
     if (metricIndex === -1) return null;
 
     const updatedMetric = {
-      ...projectsDatabase[projectIndex].metrics[metricIndex],
+      ...projectsDatabase[projectIndex].records[metricIndex],
       ...updates,
     };
     
     const updatedProject = {
       ...projectsDatabase[projectIndex],
-      metrics: projectsDatabase[projectIndex].metrics.map((metric, index) =>
+      records: projectsDatabase[projectIndex].records.map((metric, index) =>
         index === metricIndex ? updatedMetric : metric
       ),
       updatedAt: new Date().toISOString(),
@@ -131,15 +131,15 @@ export class MetricsApi {
     const projectIndex = projectsDatabase.findIndex(p => p.id === projectId);
     if (projectIndex === -1) return false;
 
-    const initialLength = projectsDatabase[projectIndex].metrics.length;
+    const initialLength = projectsDatabase[projectIndex].records.length;
     const updatedProject = {
       ...projectsDatabase[projectIndex],
-      metrics: projectsDatabase[projectIndex].metrics.filter(m => m.id !== metricId),
+      records: projectsDatabase[projectIndex].records.filter(m => m.id !== metricId),
       updatedAt: new Date().toISOString(),
     };
     
     projectsDatabase[projectIndex] = updatedProject;
-    return projectsDatabase[projectIndex].metrics.length < initialLength;
+    return projectsDatabase[projectIndex].records.length < initialLength;
   }
 
   // Get available models for a project
@@ -148,7 +148,7 @@ export class MetricsApi {
     const project = projectsDatabase.find(p => p.id === projectId);
     if (!project) return [];
     
-    const modelNames = [...new Set(project.metrics.map(m => m.modelName))];
+    const modelNames = [...new Set((project.records ?? []).map((m: ProjectMetric) => m.modelName))] as string[];
     return modelNames;
   }
 }

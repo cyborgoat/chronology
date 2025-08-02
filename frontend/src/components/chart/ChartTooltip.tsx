@@ -39,7 +39,7 @@ export function ChartTooltip({
 
   const modelName =
     chartViewMode === "metric-wise"
-      ? selectedProject.metrics.find(
+      ? selectedProject.records.find(
           (m: any) => {
             // Handle both string and Date comparisons for x value
             const pointX = point.data.x instanceof Date 
@@ -50,7 +50,7 @@ export function ChartTooltip({
         )?.modelName
       : point.seriesId;
 
-  const timestamp = selectedProject.metrics.find(
+  const timestamp = selectedProject.records.find(
     (m: any) => {
       const pointX = point.data.x instanceof Date 
         ? point.data.x.toISOString().split('T')[0] 

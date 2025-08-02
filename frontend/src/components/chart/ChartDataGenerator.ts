@@ -38,7 +38,7 @@ export function generateChartData({
     chartData = selectedMetrics.map((metric) => ({
       id: getMetricLabel(metric),
       color: getMetricColor(metric),
-      data: selectedProject.metrics
+      data: selectedProject.records
         .filter(
           (m: any) =>
             m[metric] !== undefined &&
@@ -57,7 +57,7 @@ export function generateChartData({
       return {
         id: modelName,
         color: modelColor,
-        data: selectedProject.metrics
+        data: selectedProject.records
           .filter(
             (m: any) =>
               m.modelName === modelName &&
