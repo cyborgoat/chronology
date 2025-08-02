@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useProjects } from "../contexts/ProjectContext";
+import { useProjects } from "../contexts/useProjectContext";
 import { Plus, Trash2, Edit3 } from "lucide-react";
 import type { Project } from "../types";
 
@@ -55,7 +55,8 @@ export function Header() {
         name: formData.name.trim(),
         description: formData.description.trim(),
         color: formData.color,
-        metrics: [],
+        records: [],
+        metricsConfig: [],
       });
       setFormData({ name: "", description: "", color: "#3b82f6" });
       setShowAddForm(false);

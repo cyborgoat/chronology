@@ -1,4 +1,4 @@
-import { useProjects } from "../contexts/ProjectContext";
+import { useProjects } from "../contexts/useProjectContext";
 import { Calendar, Folder } from "lucide-react";
 
 export function ProjectInfo() {

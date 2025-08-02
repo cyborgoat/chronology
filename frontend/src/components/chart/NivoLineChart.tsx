@@ -1,16 +1,16 @@
 import { ResponsiveLine } from "@nivo/line";
-import type { ChartData, MetricType } from "../../types";
+import type { ChartData, MetricType, Project, ChartPoint } from "../../types";
 import { CHART_CONFIG } from "./ChartConfig";
 import { ChartTooltip } from "./ChartTooltip";
 
 export interface NivoLineChartProps {
   chartData: ChartData[];
-  selectedProject: any;
+  selectedProject: Project;
   chartViewMode: "metric-wise" | "model-wise";
   selectedMetrics: MetricType[];
   selectedMetricForComparison: MetricType | null;
   getMetricLabel: (metric: MetricType) => string;
-  onPointClick?: (point: any) => void;
+  onPointClick?: (point: ChartPoint) => void;
 }
 
 export function NivoLineChart({
@@ -22,6 +22,23 @@ export function NivoLineChart({
   getMetricLabel,
   onPointClick,
 }: NivoLineChartProps) {
+  const handlePointClick = (point: unknown) => {
+    if (onPointClick) {
+      // Convert Nivo point to our ChartPoint format
+      const nivoPoint = point as { id: string; data: { x: string | Date; y: number }; seriesId: string; seriesColor: string };
+      const chartPoint: ChartPoint = {
+        id: nivoPoint.id,
+        x: nivoPoint.data.x,
+        y: nivoPoint.data.y,
+        serieId: nivoPoint.seriesId,
+        serieColor: nivoPoint.seriesColor,
+        seriesId: nivoPoint.seriesId,
+        data: nivoPoint.data,
+      };
+      onPointClick(chartPoint);
+    }
+  };
+
   return (
     <ResponsiveLine
       data={chartData}
@@ -42,19 +59,31 @@ export function NivoLineChart({
       pointLabelYOffset={-12}
       enablePointLabel={false}
       useMesh={true}
-      onClick={onPointClick}
+      onClick={handlePointClick}
       enableCrosshair={true}
       crosshairType="cross"
-      tooltip={(props) => (
-        <ChartTooltip
-          point={props.point}
-          selectedProject={selectedProject}
-          chartViewMode={chartViewMode}
-          selectedMetrics={selectedMetrics}
-          selectedMetricForComparison={selectedMetricForComparison}
-          getMetricLabel={getMetricLabel}
-        />
-      )}
+      tooltip={(props) => {
+        // Convert Nivo point to our format
+        const chartPoint: ChartPoint = {
+          id: props.point.id,
+          x: props.point.data.x,
+          y: props.point.data.y,
+          serieId: props.point.seriesId,
+          serieColor: props.point.seriesColor,
+          seriesId: props.point.seriesId,
+          data: props.point.data,
+        };
+        return (
+          <ChartTooltip
+            point={chartPoint}
+            selectedProject={selectedProject}
+            chartViewMode={chartViewMode}
+            selectedMetrics={selectedMetrics}
+            selectedMetricForComparison={selectedMetricForComparison}
+            getMetricLabel={getMetricLabel}
+          />
+        );
+      }}
       legends={[
         {
           anchor: "bottom-right",

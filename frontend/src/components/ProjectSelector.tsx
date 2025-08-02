@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useProjects } from '../contexts/ProjectContext';
+import { useProjects } from '../contexts/useProjectContext';
 import { Plus, Folder, Calendar, Trash2, Edit3 } from 'lucide-react';
 import type { Project } from '../types';
 
@@ -45,7 +45,8 @@ export function ProjectSelector() {
         name: formData.name.trim(),
         description: formData.description.trim(),
         color: formData.color,
-        metrics: []
+        records: [],
+        metricsConfig: []
       });
       setFormData({ name: '', description: '', color: '#3b82f6' });
       setShowAddForm(false);
@@ -152,7 +153,7 @@ export function ProjectSelector() {
         <div className="flex items-center gap-4 text-sm text-muted-foreground bg-muted/30 rounded-md p-2">
           <span className="flex items-center gap-1">
             <Folder className="w-3 h-3" />
-            {selectedProject.metrics.length} metrics
+            {selectedProject.records.length} records
           </span>
           <span className="flex items-center gap-1">
             <Calendar className="w-3 h-3" />

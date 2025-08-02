@@ -7,7 +7,7 @@ import { DataTable } from "./components/DataTable";
 import { ViewToggle } from "./components/ViewToggle";
 import { ProjectStats } from "./components/ProjectStats";
 import { MetricsConfig } from "./components/MetricsConfig";
-import type { ViewMode } from "./types";
+import type { ViewMode, ChartPoint } from "./types";
 import {
   Card,
   CardContent,
@@ -19,9 +19,9 @@ import { Button } from "@/components/ui/button";
 
 function AppContent() {
   const [currentView, setCurrentView] = useState<ViewMode>("chart");
-  const [editingPoint, setEditingPoint] = useState<any>(null);
+  const [editingPoint, setEditingPoint] = useState<ChartPoint | null>(null);
 
-  const handlePointClick = (point: any) => {
+  const handlePointClick = (point: ChartPoint) => {
     setEditingPoint(point);
     // You could open a modal here to edit the specific data point
     console.log("Point clicked:", point);

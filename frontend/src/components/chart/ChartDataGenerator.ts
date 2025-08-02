@@ -1,8 +1,8 @@
-import type { ChartData, MetricType } from "../../types";
+import type { ChartData, MetricType, Project } from "../../types";
 import { isValidTimestamp, formatTimestampForChart } from "./ChartConfig";
 
 export interface ChartDataGeneratorProps {
-  selectedProject: any;
+  selectedProject: Project;
   chartViewMode: "metric-wise" | "model-wise";
   selectedMetrics: MetricType[];
   selectedModels: string[];
@@ -40,12 +40,12 @@ export function generateChartData({
       color: getMetricColor(metric),
       data: selectedProject.records
         .filter(
-          (m: any) =>
+          (m) =>
             m[metric] !== undefined &&
             m.modelName === modelToShow &&
             isValidTimestamp(m.timestamp)
         )
-        .map((m: any) => ({
+        .map((m) => ({
           x: formatTimestampForChart(m.timestamp),
           y: m[metric] as number,
         })),
@@ -59,12 +59,12 @@ export function generateChartData({
         color: modelColor,
         data: selectedProject.records
           .filter(
-            (m: any) =>
+            (m) =>
               m.modelName === modelName &&
               m[selectedMetricForComparison] !== undefined &&
               isValidTimestamp(m.timestamp)
           )
-          .map((m: any) => ({
+          .map((m) => ({
             x: formatTimestampForChart(m.timestamp),
             y: m[selectedMetricForComparison] as number,
           })),

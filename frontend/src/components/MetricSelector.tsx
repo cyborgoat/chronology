@@ -1,4 +1,4 @@
-import { useProjects } from '../contexts/ProjectContext';
+import { useProjects } from '../contexts/useProjectContext';
 import { metricLabels, metricColors } from '../data/sampleData';
 import type { MetricType } from '../types';
 
@@ -53,10 +53,10 @@ export function MetricSelector() {
               </div>
               <div 
                 className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: metricColors[metric] }}
+                style={{ backgroundColor: metricColors[metric as keyof typeof metricColors] }}
               />
               <span className="text-sm font-medium">
-                {metricLabels[metric]}
+                {metricLabels[metric as keyof typeof metricLabels]}
               </span>
             </Label>
           ))}

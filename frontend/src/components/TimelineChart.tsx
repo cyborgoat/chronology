@@ -1,7 +1,7 @@
-import { useEffect } from "react";
-import { useProjects } from "../contexts/ProjectContext";
+import { useEffect, useMemo } from "react";
+import { useProjects } from "../contexts/useProjectContext";
 import { metricColors, metricLabels, modelColors } from "../data/sampleData";
-import type { ChartData, MetricType, ChartViewMode } from "../types";
+import type { ChartData, MetricType, ChartViewMode, ChartPoint, MetricLabels, MetricColors } from "../types";
 import { generateChartData, NivoLineChart } from "./chart";
 import {
   Card,
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 
 interface TimelineChartProps {
-  onPointClick?: (point: any) => void;
+  onPointClick?: (point: ChartPoint) => void;
 }
 
 export function TimelineChart({ onPointClick }: TimelineChartProps) {
@@ -35,7 +35,7 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
       const metricConfig = selectedProject.metricsConfig.find(m => m.id === metricId);
       if (metricConfig?.name) return metricConfig.name;
     }
-    return (metricLabels as any)[metricId] || metricId;
+    return (metricLabels as MetricLabels)[metricId] || metricId;
   };
 
   // Helper function to get metric color (from config or fallback to default)
@@ -44,15 +44,17 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
       const metricConfig = selectedProject.metricsConfig.find(m => m.id === metricId);
       if (metricConfig?.color) return metricConfig.color;
     }
-    return (metricColors as any)[metricId] || 'hsl(200, 70%, 50%)'; // default color for unknown metrics
+    return (metricColors as MetricColors)[metricId] || 'hsl(200, 70%, 50%)'; // default color for unknown metrics
   };
 
   // Get enabled metrics from project's metrics configuration
-  const enabledMetrics: MetricType[] = selectedProject?.metricsConfig
-    ? selectedProject.metricsConfig
-        .filter(metric => metric.enabled)
-        .map(metric => metric.id as MetricType)
-    : [];
+  const enabledMetrics: MetricType[] = useMemo(() => 
+    selectedProject?.metricsConfig
+      ? selectedProject.metricsConfig
+          .filter(metric => metric.enabled)
+          .map(metric => metric.id as MetricType)
+      : [], [selectedProject?.metricsConfig]
+  );
 
   const availableModels = selectedProject
     ? getAvailableModels(selectedProject.id)
@@ -193,7 +195,7 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
     }
   };
 
-  const handlePointClick = (point: any) => {
+  const handlePointClick = (point: ChartPoint) => {
     if (onPointClick) {
       let metricType: MetricType;
       let timestamp: string | undefined;

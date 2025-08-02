@@ -64,7 +64,7 @@ export const CHART_CONFIG = {
 } as const;
 
 // Utility to strictly validate timestamps for Nivo time scale
-export function isValidTimestamp(ts: any): ts is string {
+export function isValidTimestamp(ts: unknown): ts is string {
   if (typeof ts !== "string" || !ts.trim()) return false;
   // Check if it matches YYYY-MM-DD format
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/;

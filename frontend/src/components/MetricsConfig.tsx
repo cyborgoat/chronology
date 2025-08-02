@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Plus, X, RotateCcw } from 'lucide-react';
-import { useProjects } from '../contexts/ProjectContext';
+import { useProjects } from '../contexts/useProjectContext';
 import { getDefaultMetricsConfig } from '../services/api';
-import type { MetricSettings, MetricValueType } from '../types';
+import type { MetricSettings, MetricValueType, MetricType } from '../types';
 import {
   Card,
   CardContent,
@@ -80,7 +80,7 @@ export function MetricsConfig() {
     if (metricsConfig.length > 0) {
       const enabledMetrics = metricsConfig
         .filter(metric => metric.enabled)
-        .map(metric => metric.id as any); // Cast to MetricType
+        .map(metric => metric.id as MetricType);
 
       if (chartViewMode === 'metric-wise') {
         // Update selectedMetrics to match enabled metrics
@@ -92,7 +92,7 @@ export function MetricsConfig() {
         }
       }
     }
-  }, [metricsConfig, chartViewMode, setSelectedMetrics, setSelectedMetricForComparison]);
+  }, [metricsConfig, chartViewMode, setSelectedMetrics, setSelectedMetricForComparison, selectedMetricForComparison]);
 
   // Auto-save when metrics config changes
   useEffect(() => {
@@ -129,7 +129,7 @@ export function MetricsConfig() {
 
     // Sync with TimelineChart selections based on the new state
     if (isDefaultMetric(metricId)) {
-      const metricKey = metricId as any; // Cast to MetricType
+      const metricKey = metricId as MetricType;
       if (chartViewMode === 'metric-wise') {
         // Update selectedMetrics for metric-wise view
         if (willBeEnabled) {
@@ -150,7 +150,7 @@ export function MetricsConfig() {
             // Find another enabled metric to set as comparison, or set to null
             const otherEnabledMetrics = metricsConfig
               .filter(m => m.enabled && m.id !== metricId)
-              .map(m => m.id as any);
+              .map(m => m.id as MetricType);
             setSelectedMetricForComparison(otherEnabledMetrics[0] || null);
           }
         }
@@ -239,7 +239,7 @@ export function MetricsConfig() {
     setMetricsConfig(defaultMetrics);
     
     // Sync with TimelineChart immediately after reset
-    const allDefaultMetrics = defaultMetrics.map(m => m.id as any);
+    const allDefaultMetrics = defaultMetrics.map(m => m.id as MetricType);
     if (chartViewMode === 'metric-wise') {
       setSelectedMetrics(allDefaultMetrics);
     } else {

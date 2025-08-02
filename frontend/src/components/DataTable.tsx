@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useProjects } from "../contexts/ProjectContext";
+import { useProjects } from "../contexts/useProjectContext";
 import { metricLabels } from "../data/sampleData";
 import type { ProjectMetric, MetricType } from "../types";
 import { Pencil, Trash2, Plus, Save, X } from "lucide-react";
@@ -154,7 +154,7 @@ export function DataTable() {
                 <TableHead>Date</TableHead>
                 <TableHead>Model</TableHead>
                 {enabledDefaultMetrics.map((key) => (
-                  <TableHead key={key}>{metricLabels[key]}</TableHead>
+                  <TableHead key={key}>{metricLabels[key as keyof typeof metricLabels]}</TableHead>
                 ))}
                 {enabledCustomMetrics.map((customId) => {
                   const customMetric = selectedProject?.metricsConfig?.find(
@@ -246,7 +246,7 @@ export function DataTable() {
                             className="w-20"
                           />
                         ) : (
-                          metric[key]?.toFixed(3) || "-"
+                          typeof metric[key] === 'number' ? metric[key].toFixed(3) : metric[key] || "-"
                         )}
                       </TableCell>
                     ))}

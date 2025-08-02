@@ -50,3 +50,51 @@ export type MetricType = 'accuracy' | 'loss' | 'precision' | 'recall' | 'f1Score
 export type ViewMode = 'chart' | 'table' | 'metrics';
 
 export type ChartViewMode = 'metric-wise' | 'model-wise';
+
+// New types to replace 'any' usage
+export interface ChartPoint {
+  id: string;
+  x: string | Date;
+  y: number;
+  serieId: string;
+  serieColor: string;
+  seriesId: string; // Nivo uses both serieId and seriesId
+  data: {
+    x: string | Date;
+    y: number;
+  };
+  metricType?: MetricType;
+  timestamp?: string;
+  modelName?: string;
+  projectId?: string;
+}
+
+// Type for Nivo chart point
+export interface NivoChartPoint {
+  id: string;
+  x: string | Date;
+  y: number;
+  serieId: string;
+  serieColor: string;
+  seriesId: string;
+  data: {
+    x: string | Date;
+    y: number;
+  };
+}
+
+export interface ChartPointClickHandler {
+  (point: ChartPoint): void;
+}
+
+export interface MetricLabels {
+  [key: string]: string;
+}
+
+export interface MetricColors {
+  [key: string]: string;
+}
+
+export interface ModelColors {
+  [key: string]: string;
+}

@@ -1,4 +1,4 @@
-import { useProjects } from '../contexts/ProjectContext';
+import { useProjects } from '../contexts/useProjectContext';
 import { TrendingUp, TrendingDown, BarChart, Calendar } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

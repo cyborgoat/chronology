@@ -1,8 +1,8 @@
-import type { MetricType } from "../../types";
+import type { MetricType, ChartPoint, Project, NivoChartPoint } from "../../types";
 
 export interface ChartTooltipProps {
-  point: any;
-  selectedProject: any;
+  point: ChartPoint | NivoChartPoint;
+  selectedProject: Project;
   chartViewMode: "metric-wise" | "model-wise";
   selectedMetrics: MetricType[];
   selectedMetricForComparison: MetricType | null;
@@ -18,7 +18,7 @@ export function ChartTooltip({
   getMetricLabel,
 }: ChartTooltipProps) {
   // Safely extract and format the timestamp
-  const formatDate = (dateValue: any): string => {
+  const formatDate = (dateValue: string | Date | unknown): string => {
     if (!dateValue) return "Unknown";
     
     if (typeof dateValue === 'string') {
@@ -40,7 +40,7 @@ export function ChartTooltip({
   const modelName =
     chartViewMode === "metric-wise"
       ? selectedProject.records.find(
-          (m: any) => {
+          (m) => {
             // Handle both string and Date comparisons for x value
             const pointX = point.data.x instanceof Date 
               ? point.data.x.toISOString().split('T')[0] 
@@ -51,7 +51,7 @@ export function ChartTooltip({
       : point.seriesId;
 
   const timestamp = selectedProject.records.find(
-    (m: any) => {
+    (m) => {
       const pointX = point.data.x instanceof Date 
         ? point.data.x.toISOString().split('T')[0] 
         : String(point.data.x);

@@ -64,11 +64,6 @@ export function useProjects(): UseProjectsReturn {
   const selectedProject = projects.find(p => p.id === selectedProjectId) || null;
   const selectedProjects = projects.filter(p => selectedProjectIds.includes(p.id));
 
-  // Load projects on mount
-  useEffect(() => {
-    loadProjects();
-  }, []);
-
   // Auto-select first project when projects load
   useEffect(() => {
     if (projects.length > 0 && !selectedProjectId) {
@@ -99,6 +94,11 @@ export function useProjects(): UseProjectsReturn {
       setLoading(false);
     }
   }, []);
+
+  // Load projects on mount
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects]);
 
   // Project selection
   const selectProject = useCallback((id: string | null) => {
