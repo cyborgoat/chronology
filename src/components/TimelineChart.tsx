@@ -297,14 +297,18 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
                 <div className="flex flex-wrap gap-2">
                   {enabledMetrics.length > 0 && (
                     <button
-                      onClick={() => setSelectedMetrics(enabledMetrics)}
+                      onClick={() =>
+                        selectedMetrics.length === enabledMetrics.length
+                          ? setSelectedMetrics([])
+                          : setSelectedMetrics(enabledMetrics)
+                      }
                       className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                         selectedMetrics.length === enabledMetrics.length
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted text-muted-foreground hover:bg-muted/80"
                       }`}
                     >
-                      All Metrics
+                      {selectedMetrics.length === enabledMetrics.length ? "Clear All" : "All Metrics"}
                     </button>
                   )}
                   {enabledMetrics.map((metric) => (
@@ -414,14 +418,18 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button
-                    onClick={() => setSelectedModels(availableModels)}
+                    onClick={() =>
+                      selectedModels.length === availableModels.length
+                        ? setSelectedModels([])
+                        : setSelectedModels(availableModels)
+                    }
                     className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                       selectedModels.length === availableModels.length
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground hover:bg-muted/80"
                     }`}
                   >
-                    All Models
+                    {selectedModels.length === availableModels.length ? "Clear All" : "All Models"}
                   </button>
                   {availableModels.map((modelName) => (
                     <button
