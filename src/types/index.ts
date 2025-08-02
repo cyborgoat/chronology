@@ -11,6 +11,13 @@ export interface ProjectMetric {
   [key: string]: string | number | undefined;
 }
 
+export interface CustomMetric {
+  id: string;
+  name: string;
+  color: string;
+  enabled: boolean;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -19,6 +26,8 @@ export interface Project {
   updatedAt: string;
   metrics: ProjectMetric[];
   color: string;
+  customMetrics?: CustomMetric[];
+  enabledDefaultMetrics?: string[];
 }
 
 export interface ChartData {
@@ -32,6 +41,6 @@ export interface ChartData {
 
 export type MetricType = 'accuracy' | 'loss' | 'precision' | 'recall' | 'f1Score';
 
-export type ViewMode = 'chart' | 'table';
+export type ViewMode = 'chart' | 'table' | 'metrics';
 
 export type ChartViewMode = 'metric-wise' | 'model-wise';

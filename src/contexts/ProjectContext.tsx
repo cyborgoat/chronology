@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import type { Project, ProjectMetric, MetricType, ChartViewMode } from '../types';
+import type { Project, ProjectMetric, MetricType, ChartViewMode, CustomMetric } from '../types';
 import { sampleProjects } from '../data/sampleData';
 
 interface ProjectContextType {
@@ -25,6 +25,7 @@ interface ProjectContextType {
   setChartViewMode: (mode: ChartViewMode) => void;
   setSelectedMetricForComparison: (metric: MetricType | null) => void;
   getAvailableModels: (projectId?: string) => string[];
+  updateProjectMetricsConfig: (projectId: string, customMetrics: CustomMetric[], enabledDefaultMetrics: string[]) => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -123,6 +124,19 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     ));
   }, []);
 
+  const updateProjectMetricsConfig = useCallback((projectId: string, customMetrics: CustomMetric[], enabledDefaultMetrics: string[]) => {
+    setProjects(prev => prev.map(project =>
+      project.id === projectId
+        ? {
+            ...project,
+            customMetrics,
+            enabledDefaultMetrics,
+            updatedAt: new Date().toISOString()
+          }
+        : project
+    ));
+  }, []);
+
   const contextValue: ProjectContextType = {
     projects,
     selectedProjectId,
@@ -146,6 +160,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     setChartViewMode,
     setSelectedMetricForComparison,
     getAvailableModels,
+    updateProjectMetricsConfig,
   };
 
   return (

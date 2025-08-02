@@ -6,6 +6,7 @@ import { TimelineChart } from "./components/TimelineChart";
 import { DataTable } from "./components/DataTable";
 import { ViewToggle } from "./components/ViewToggle";
 import { ProjectStats } from "./components/ProjectStats";
+import { MetricsConfig } from "./components/MetricsConfig";
 import type { ViewMode } from "./types";
 import {
   Card,
@@ -48,8 +49,10 @@ function AppContent() {
         <div className="space-y-6">
           {currentView === "chart" ? (
             <TimelineChart onPointClick={handlePointClick} />
-          ) : (
+          ) : currentView === "table" ? (
             <DataTable />
+          ) : (
+            <MetricsConfig />
           )}
         </div>
 
