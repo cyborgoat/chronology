@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Plus, X, RotateCcw } from 'lucide-react';
 import { useProjects } from '../contexts/ProjectContext';
+import { getDefaultMetricsConfig } from '../services/api';
 import type { MetricSettings, MetricValueType } from '../types';
 import {
   Card,
   CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,62 +66,7 @@ export function MetricsConfig() {
         setMetricsConfig(projectMetricsConfig);
       } else {
         // If no metrics config exists, initialize with default metrics
-        const defaultMetrics: MetricSettings[] = [
-          {
-            id: 'accuracy',
-            name: 'Accuracy',
-            type: 'percentage',
-            color: 'hsl(200, 100%, 50%)',
-            unit: '%',
-            enabled: true,
-            min: 0,
-            max: 1,
-            description: 'Model prediction accuracy'
-          },
-          {
-            id: 'loss',
-            name: 'Loss',
-            type: 'float',
-            color: 'hsl(0, 100%, 50%)',
-            unit: '',
-            enabled: true,
-            min: 0,
-            description: 'Training loss value'
-          },
-          {
-            id: 'precision',
-            name: 'Precision',
-            type: 'percentage',
-            color: 'hsl(120, 100%, 40%)',
-            unit: '%',
-            enabled: true,
-            min: 0,
-            max: 1,
-            description: 'Model precision score'
-          },
-          {
-            id: 'recall',
-            name: 'Recall',
-            type: 'percentage',
-            color: 'hsl(60, 100%, 50%)',
-            unit: '%',
-            enabled: true,
-            min: 0,
-            max: 1,
-            description: 'Model recall score'
-          },
-          {
-            id: 'f1Score',
-            name: 'F1 Score',
-            type: 'percentage',
-            color: 'hsl(280, 100%, 50%)',
-            unit: '%',
-            enabled: true,
-            min: 0,
-            max: 1,
-            description: 'F1 score metric'
-          }
-        ];
+        const defaultMetrics = getDefaultMetricsConfig();
         setMetricsConfig(defaultMetrics);
         // Save the default metrics to the project
         updateProjectMetricsConfig(selectedProject.id, defaultMetrics);
@@ -128,17 +77,17 @@ export function MetricsConfig() {
   // Sync with TimelineChart selections when metrics config or chart mode changes
   useEffect(() => {
     if (metricsConfig.length > 0) {
-      const enabledDefaultMetrics = metricsConfig
-        .filter(metric => isDefaultMetric(metric.id) && metric.enabled)
+      const enabledMetrics = metricsConfig
+        .filter(metric => metric.enabled)
         .map(metric => metric.id as any); // Cast to MetricType
 
       if (chartViewMode === 'metric-wise') {
         // Update selectedMetrics to match enabled metrics
-        setSelectedMetrics(enabledDefaultMetrics);
+        setSelectedMetrics(enabledMetrics);
       } else {
         // For model-wise view, if current selectedMetricForComparison is not enabled, pick the first enabled one
-        if (!selectedMetricForComparison || !enabledDefaultMetrics.includes(selectedMetricForComparison)) {
-          setSelectedMetricForComparison(enabledDefaultMetrics[0] || null);
+        if (!selectedMetricForComparison || !enabledMetrics.includes(selectedMetricForComparison)) {
+          setSelectedMetricForComparison(enabledMetrics[0] || null);
         }
       }
     }
@@ -193,7 +142,7 @@ export function MetricsConfig() {
           if (selectedMetricForComparison === metricKey) {
             // Find another enabled metric to set as comparison, or set to null
             const otherEnabledMetrics = metricsConfig
-              .filter(m => isDefaultMetric(m.id) && m.enabled && m.id !== metricId)
+              .filter(m => m.enabled && m.id !== metricId)
               .map(m => m.id as any);
             setSelectedMetricForComparison(otherEnabledMetrics[0] || null);
           }
@@ -242,62 +191,7 @@ export function MetricsConfig() {
   };
 
   const resetToDefaults = () => {
-    const defaultMetrics: MetricSettings[] = [
-      {
-        id: 'accuracy',
-        name: 'Accuracy',
-        type: 'percentage',
-        color: 'hsl(200, 100%, 50%)',
-        unit: '%',
-        enabled: true,
-        min: 0,
-        max: 1,
-        description: 'Model prediction accuracy'
-      },
-      {
-        id: 'loss',
-        name: 'Loss',
-        type: 'float',
-        color: 'hsl(0, 100%, 50%)',
-        unit: '',
-        enabled: true,
-        min: 0,
-        description: 'Training loss value'
-      },
-      {
-        id: 'precision',
-        name: 'Precision',
-        type: 'percentage',
-        color: 'hsl(120, 100%, 40%)',
-        unit: '%',
-        enabled: true,
-        min: 0,
-        max: 1,
-        description: 'Model precision score'
-      },
-      {
-        id: 'recall',
-        name: 'Recall',
-        type: 'percentage',
-        color: 'hsl(60, 100%, 50%)',
-        unit: '%',
-        enabled: true,
-        min: 0,
-        max: 1,
-        description: 'Model recall score'
-      },
-      {
-        id: 'f1Score',
-        name: 'F1 Score',
-        type: 'percentage',
-        color: 'hsl(280, 100%, 50%)',
-        unit: '%',
-        enabled: true,
-        min: 0,
-        max: 1,
-        description: 'F1 score metric'
-      }
-    ];
+    const defaultMetrics = getDefaultMetricsConfig();
     setMetricsConfig(defaultMetrics);
     
     // Sync with TimelineChart immediately after reset
@@ -311,21 +205,25 @@ export function MetricsConfig() {
 
   if (!selectedProject) {
     return (
-      <div className="p-8 text-center text-gray-500">
-        Select a project to configure metrics
-      </div>
+      <Card>
+        <CardContent className="flex items-center justify-center h-96">
+          <p className="text-muted-foreground text-lg">
+            Select a project to configure metrics
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-xl font-semibold">Metrics Configuration</h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <CardTitle>Metrics Configuration</CardTitle>
+            <CardDescription>
               Manage metrics for {selectedProject.name}
-            </p>
+            </CardDescription>
           </div>
           <div className="flex items-center gap-2">
             <TooltipProvider>
@@ -449,9 +347,8 @@ export function MetricsConfig() {
             </TooltipProvider>
           </div>
         </div>
-
-        <Card>
-          <CardContent className="pt-4">
+      </CardHeader>
+      <CardContent>
             <TooltipProvider>
               <div className="space-y-4">
                 {/* Default Metrics Section */}
@@ -562,8 +459,6 @@ export function MetricsConfig() {
               </div>
             </TooltipProvider>
           </CardContent>
-        </Card>
-      </div>
-    </div>
+    </Card>
   );
 }

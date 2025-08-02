@@ -29,10 +29,28 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
     getAvailableModels,
   } = useProjects();
 
+  // Helper function to get metric label (from config or fallback to default)
+  const getMetricLabel = (metricId: MetricType): string => {
+    if (selectedProject?.metricsConfig) {
+      const metricConfig = selectedProject.metricsConfig.find(m => m.id === metricId);
+      if (metricConfig) return metricConfig.name;
+    }
+    return (metricLabels as any)[metricId] || metricId;
+  };
+
+  // Helper function to get metric color (from config or fallback to default)
+  const getMetricColor = (metricId: MetricType): string => {
+    if (selectedProject?.metricsConfig) {
+      const metricConfig = selectedProject.metricsConfig.find(m => m.id === metricId);
+      if (metricConfig) return metricConfig.color;
+    }
+    return (metricColors as any)[metricId] || 'hsl(200, 70%, 50%)'; // default color for unknown metrics
+  };
+
   // Get enabled metrics from project's metrics configuration
   const enabledMetrics: MetricType[] = selectedProject?.metricsConfig
     ? selectedProject.metricsConfig
-        .filter(metric => metric.enabled && ['accuracy', 'loss', 'precision', 'recall', 'f1Score'].includes(metric.id))
+        .filter(metric => metric.enabled)
         .map(metric => metric.id as MetricType)
     : [];
 
@@ -151,8 +169,8 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
     // Show multiple metrics for the selected project, but only for the first selected model (or first available model)
     const modelToShow = selectedModels.length > 0 ? selectedModels[0] : (availableModels.length > 0 ? availableModels[0] : undefined);
     chartData = selectedMetrics.map((metric) => ({
-      id: metricLabels[metric],
-      color: metricColors[metric],
+      id: getMetricLabel(metric),
+      color: getMetricColor(metric),
       data: selectedProject.metrics
         .filter(
           (m) =>
@@ -217,7 +235,7 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
 
       if (chartViewMode === "metric-wise") {
         metricType = selectedMetrics.find(
-          (m) => metricLabels[m] === point.seriesId
+          (m) => getMetricLabel(m) === point.seriesId
         ) as MetricType;
         // Find the metric entry that matches this point
         const matchingMetric = selectedProject.metrics.find(
@@ -259,7 +277,7 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
       return `${selectedProject.name} - Performance Timeline`;
     } else {
       return `${selectedProject.name} - Model Comparison (${
-        metricLabels[selectedMetricForComparison!]
+        getMetricLabel(selectedMetricForComparison!)
       })`;
     }
   };
@@ -341,9 +359,9 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
                     >
                       <div
                         className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: metricColors[metric] }}
+                        style={{ backgroundColor: getMetricColor(metric) }}
                       />
-                      {metricLabels[metric]}
+                      {getMetricLabel(metric)}
                     </button>
                   ))}
                 </div>
@@ -419,9 +437,9 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
                       >
                         <div
                           className="w-2 h-2 rounded-full"
-                          style={{ backgroundColor: metricColors[metric] }}
+                          style={{ backgroundColor: getMetricColor(metric) }}
                         />
-                        {metricLabels[metric]}
+                        {getMetricLabel(metric)}
                       </button>
                     ))
                   )}
@@ -536,7 +554,7 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
                 const metricType =
                   chartViewMode === "metric-wise"
                     ? selectedMetrics.find(
-                        (m) => metricLabels[m] === point.seriesId
+                        (m) => getMetricLabel(m) === point.seriesId
                       )
                     : selectedMetricForComparison;
 
@@ -593,7 +611,7 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
                           <strong>Metric Type:</strong>
                         </span>
                         <span className="font-medium">
-                          {metricType ? metricLabels[metricType] : "Unknown"}
+                          {metricType ? getMetricLabel(metricType) : "Unknown"}
                         </span>
                       </div>
                       <div className="flex justify-between">

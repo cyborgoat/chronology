@@ -45,7 +45,7 @@ export interface ChartData {
   }>;
 }
 
-export type MetricType = 'accuracy' | 'loss' | 'precision' | 'recall' | 'f1Score';
+export type MetricType = 'accuracy' | 'loss' | 'precision' | 'recall' | 'f1Score' | string;
 
 export type ViewMode = 'chart' | 'table' | 'metrics';
 
