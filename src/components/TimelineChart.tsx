@@ -1,8 +1,8 @@
-import { ResponsiveLine } from "@nivo/line";
 import { useEffect } from "react";
 import { useProjects } from "../contexts/ProjectContext";
 import { metricColors, metricLabels, modelColors } from "../data/sampleData";
 import type { ChartData, MetricType, ChartViewMode } from "../types";
+import { generateChartData, NivoLineChart } from "./chart";
 import {
   Card,
   CardContent,
@@ -163,51 +163,17 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
   };
 
   // Generate chart data based on view mode
-  let chartData: ChartData[] = [];
-
-  if (chartViewMode === "metric-wise") {
-    // Show multiple metrics for the selected project, but only for the first selected model (or first available model)
-    const modelToShow = selectedModels.length > 0 ? selectedModels[0] : (availableModels.length > 0 ? availableModels[0] : undefined);
-    chartData = selectedMetrics.map((metric) => ({
-      id: getMetricLabel(metric),
-      color: getMetricColor(metric),
-      data: selectedProject.metrics
-        .filter(
-          (m) =>
-            m[metric] !== undefined &&
-            m.modelName === modelToShow
-        )
-        .map((m) => ({
-          x: new Date(m.timestamp).toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "short",
-          }),
-          y: m[metric] as number,
-        })),
-    }));
-  } else if (chartViewMode === "model-wise" && selectedMetricForComparison) {
-    // Show one metric across multiple models within the same project
-    chartData = selectedModels.map((modelName) => {
-      const modelColor = modelColors[modelName] || modelColors["default-1"];
-      return {
-        id: modelName,
-        color: modelColor,
-        data: selectedProject.metrics
-          .filter(
-            (m) =>
-              m.modelName === modelName &&
-              m[selectedMetricForComparison] !== undefined
-          )
-          .map((m) => ({
-            x: new Date(m.timestamp).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "short",
-            }),
-            y: m[selectedMetricForComparison] as number,
-          })),
-      };
-    });
-  }
+  const chartData: ChartData[] = generateChartData({
+    selectedProject,
+    chartViewMode,
+    selectedMetrics,
+    selectedModels,
+    selectedMetricForComparison,
+    availableModels,
+    getMetricLabel,
+    getMetricColor,
+    modelColors,
+  });
 
   // Check if we should show empty state after selections are made
   const shouldShowEmptyState = () => {
@@ -240,10 +206,7 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
         // Find the metric entry that matches this point
         const matchingMetric = selectedProject.metrics.find(
           (m) =>
-            new Date(m.timestamp).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "short",
-            }) === point.data.x && m[metricType] === point.data.y
+            m.timestamp === point.data.x && m[metricType] === point.data.y
         );
         timestamp = matchingMetric?.timestamp;
         modelName = matchingMetric?.modelName;
@@ -253,10 +216,7 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
         const matchingMetric = selectedProject.metrics.find(
           (m) =>
             m.modelName === modelName &&
-            new Date(m.timestamp).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "short",
-            }) === point.data.x &&
+            m.timestamp === point.data.x &&
             m[metricType] === point.data.y
         );
         timestamp = matchingMetric?.timestamp;
@@ -507,172 +467,14 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
           </div>
         ) : (
           <div className="h-96">
-            <ResponsiveLine
-              data={chartData}
-              colors={chartData.map(series => series.color)}
-              margin={{ top: 50, right: 110, bottom: 50, left: 60 }}
-              xScale={{ type: "point" }}
-              yScale={{
-                type: "linear",
-                min: 0,
-                max: 1,
-                stacked: false,
-                reverse: false,
-              }}
-              yFormat=" >-.3f"
-              curve="monotoneX"
-              axisTop={null}
-              axisRight={null}
-              axisBottom={{
-                tickSize: 5,
-                tickPadding: 5,
-                tickRotation: -45,
-                legend: "Time Period",
-                legendOffset: 36,
-                legendPosition: "middle",
-              }}
-              axisLeft={{
-                tickSize: 5,
-                tickPadding: 5,
-                tickRotation: 0,
-                legend: "Metric Value",
-                legendOffset: -40,
-                legendPosition: "middle",
-                format: ".2f",
-              }}
-              pointSize={10}
-              pointColor={{ theme: "background" }}
-              pointBorderWidth={3}
-              pointBorderColor={{ from: "serieColor" }}
-              pointLabelYOffset={-12}
-              enablePointLabel={false}
-              useMesh={true}
-              onClick={handlePointClick}
-              enableCrosshair={true}
-              crosshairType="cross"
-              tooltip={({ point }) => {
-                const metricType =
-                  chartViewMode === "metric-wise"
-                    ? selectedMetrics.find(
-                        (m) => getMetricLabel(m) === point.seriesId
-                      )
-                    : selectedMetricForComparison;
-
-                const modelName =
-                  chartViewMode === "metric-wise"
-                    ? selectedProject.metrics.find(
-                        (m) =>
-                          new Date(m.timestamp).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "short",
-                          }) === point.data.x &&
-                          m[metricType as MetricType] === point.data.y
-                      )?.modelName
-                    : point.seriesId;
-
-                const timestamp = selectedProject.metrics.find(
-                  (m) =>
-                    new Date(m.timestamp).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "short",
-                    }) === point.data.x &&
-                    (chartViewMode === "metric-wise"
-                      ? m[metricType as MetricType] === point.data.y
-                      : m.modelName === modelName &&
-                        m[metricType as MetricType] === point.data.y)
-                )?.timestamp;
-
-                return (
-                  <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-lg min-w-64">
-                    <div className="font-semibold text-gray-800 mb-3 text-center border-b pb-2">
-                      Data Point Information
-                    </div>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">
-                          <strong>Date:</strong>
-                        </span>
-                        <span className="font-medium">
-                          {timestamp
-                            ? new Date(timestamp).toLocaleDateString()
-                            : point.data.x}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">
-                          <strong>Model:</strong>
-                        </span>
-                        <span className="font-medium">
-                          {modelName || "Unknown"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">
-                          <strong>Metric Type:</strong>
-                        </span>
-                        <span className="font-medium">
-                          {metricType ? getMetricLabel(metricType) : "Unknown"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">
-                          <strong>Value:</strong>
-                        </span>
-                        <span className="font-bold text-blue-600">
-                          {typeof point.data.y === "number"
-                            ? point.data.y.toFixed(3)
-                            : point.data.y}
-                        </span>
-                      </div>
-                      <hr className="my-2 border-gray-200" />
-                      <div className="text-xs text-gray-500 space-y-0.5">
-                        <div>
-                          <strong>X-Axis:</strong> Time Period (Monthly)
-                        </div>
-                        <div>
-                          <strong>Y-Axis:</strong> Metric Value (0.0 - 1.0)
-                        </div>
-                        <div>
-                          <strong>Series:</strong> {point.seriesId}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }}
-              legends={[ 
-                { 
-                  anchor: "bottom-right", 
-                  direction: "column", 
-                  justify: false, 
-                  translateX: 100, 
-                  translateY: 0, 
-                  itemsSpacing: 0, 
-                  itemDirection: "left-to-right", 
-                  itemWidth: 80, 
-                  itemHeight: 20, 
-                  itemOpacity: 0.75, 
-                  symbolSize: 12, 
-                  symbolShape: "circle", 
-                  symbolBorderColor: "rgba(0, 0, 0, .5)", 
-                  data: chartData.map((series) => ({
-                    id: series.id,
-                    label: series.id,
-                    color: series.color,
-                  })),
-                  effects: [ 
-                    { 
-                      on: "hover", 
-                      style: { 
-                        itemBackground: "rgba(0, 0, 0, .03)", 
-                        itemOpacity: 1, 
-                      }, 
-                    }, 
-                  ], 
-                }, 
-              ]}
-              animate={true}
-              motionConfig="gentle"
+            <NivoLineChart
+              chartData={chartData}
+              selectedProject={selectedProject}
+              chartViewMode={chartViewMode}
+              selectedMetrics={selectedMetrics}
+              selectedMetricForComparison={selectedMetricForComparison}
+              getMetricLabel={getMetricLabel}
+              onPointClick={handlePointClick}
             />
           </div>
         )}
