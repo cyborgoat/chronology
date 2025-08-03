@@ -1,13 +1,24 @@
+"""
+API routes for the Chronology application.
+
+This module contains all the FastAPI route handlers for:
+- Project management (CRUD operations)
+- Metric record management (CRUD operations)
+- Metric settings management
+- Utility endpoints
+"""
+
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
 import uuid
+import json
 
 from .models import (
     Project, ProjectMetric, MetricSettings,
     CreateProjectRequest, UpdateProjectRequest,
-    CreateMetricRequest, UpdateMetricRequest
+    CreateMetricRecordRequest, CreateMetricRequest, UpdateMetricRequest
 )
 from .storage import (
     create_project, get_all_projects, get_project_by_id, update_project, delete_project,
@@ -117,19 +128,27 @@ def get_project_metrics_route(project_id: str, db: Session = Depends(get_db)):
             'precision': db_metric.precision,
             'recall': db_metric.recall,
             'f1Score': db_metric.f1_score,
-            'additionalMetrics': None  # TODO: Implement JSON parsing
+            'additionalMetrics': json.loads(db_metric.additional_metrics) if db_metric.additional_metrics else None
         }
         metrics.append(ProjectMetric(**metric_dict))
     
     return metrics
 
 @router.post("/projects/{project_id}/metrics", response_model=ProjectMetric)
-def create_metric_route(project_id: str, metric_data: CreateMetricRequest, db: Session = Depends(get_db)):
-    """Add a new metric to a project"""
+def create_metric_route(project_id: str, metric_data: CreateMetricRecordRequest, db: Session = Depends(get_db)):
+    """Add a new metric record to a project"""
     # Verify project exists
     db_project = get_project_by_id(db, project_id)
     if not db_project:
         raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Validate additional metrics if provided
+    if metric_data.additionalMetrics is not None:
+        try:
+            # Validate that additional metrics can be serialized to JSON
+            json.dumps(metric_data.additionalMetrics)
+        except (TypeError, ValueError) as e:
+            raise HTTPException(status_code=400, detail=f"Invalid additional metrics format: {str(e)}")
     
     metric_id = f"{project_id}-{uuid.uuid4()}"
     
@@ -145,7 +164,7 @@ def create_metric_route(project_id: str, metric_data: CreateMetricRequest, db: S
         'precision': metric_data.precision,
         'recall': metric_data.recall,
         'f1_score': metric_data.f1Score,
-        'additional_metrics': None  # TODO: Implement JSON serialization
+        'additional_metrics': json.dumps(metric_data.additionalMetrics) if metric_data.additionalMetrics else None
     }
     
     db_metric = create_metric(db, db_metric_data)
@@ -162,14 +181,14 @@ def create_metric_route(project_id: str, metric_data: CreateMetricRequest, db: S
         'precision': db_metric.precision,
         'recall': db_metric.recall,
         'f1Score': db_metric.f1_score,
-        'additionalMetrics': None
+        'additionalMetrics': json.loads(db_metric.additional_metrics) if db_metric.additional_metrics else None
     }
     
     return ProjectMetric(**metric_dict)
 
 @router.put("/projects/{project_id}/metrics/{metric_id}", response_model=ProjectMetric)
 def update_metric_route(project_id: str, metric_id: str, metric_data: UpdateMetricRequest, db: Session = Depends(get_db)):
-    """Update a metric"""
+    """Update a metric record"""
     # Verify project exists
     db_project = get_project_by_id(db, project_id)
     if not db_project:
@@ -179,6 +198,14 @@ def update_metric_route(project_id: str, metric_id: str, metric_data: UpdateMetr
     db_metric = get_metric_by_id(db, metric_id)
     if not db_metric or db_metric.project_id != project_id:
         raise HTTPException(status_code=404, detail="Metric not found")
+    
+    # Validate additional metrics if provided
+    if metric_data.additionalMetrics is not None:
+        try:
+            # Validate that additional metrics can be serialized to JSON
+            json.dumps(metric_data.additionalMetrics)
+        except (TypeError, ValueError) as e:
+            raise HTTPException(status_code=400, detail=f"Invalid additional metrics format: {str(e)}")
     
     # Prepare update data
     update_data = {}
@@ -198,6 +225,8 @@ def update_metric_route(project_id: str, metric_id: str, metric_data: UpdateMetr
         update_data['recall'] = metric_data.recall
     if metric_data.f1Score is not None:
         update_data['f1_score'] = metric_data.f1Score
+    if metric_data.additionalMetrics is not None:
+        update_data['additional_metrics'] = json.dumps(metric_data.additionalMetrics)
     
     updated_metric = update_metric(db, metric_id, update_data)
     
@@ -213,7 +242,7 @@ def update_metric_route(project_id: str, metric_id: str, metric_data: UpdateMetr
         'precision': updated_metric.precision,
         'recall': updated_metric.recall,
         'f1Score': updated_metric.f1_score,
-        'additionalMetrics': None
+        'additionalMetrics': json.loads(updated_metric.additional_metrics) if updated_metric.additional_metrics else None
     }
     
     return ProjectMetric(**metric_dict)
@@ -253,6 +282,51 @@ def update_project_metrics_config(project_id: str, metrics_config: List[MetricSe
     update_project_metric_settings(db, project_id, settings_data)
     
     return {"message": "Metric configuration updated successfully"}
+
+@router.post("/projects/{project_id}/metrics-definitions")
+def create_metric_definition(project_id: str, metric_data: CreateMetricRequest, db: Session = Depends(get_db)):
+    """Create a new metric definition for a project"""
+    # Verify project exists
+    db_project = get_project_by_id(db, project_id)
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Convert to database format
+    setting_data = {
+        'project_id': project_id,
+        'metric_id': metric_data.metricId,
+        'name': metric_data.name,
+        'type': metric_data.type,
+        'color': metric_data.color,
+        'unit': metric_data.unit,
+        'enabled': metric_data.enabled,
+        'min_value': metric_data.min,
+        'max_value': metric_data.max,
+        'description': metric_data.description
+    }
+    
+    # Create the metric setting
+    from .storage import create_metric_settings
+    db_setting = create_metric_settings(db, setting_data)
+    
+    return {"message": "Metric definition created successfully", "metricId": metric_data.metricId}
+
+@router.delete("/projects/{project_id}/metrics-definitions/{metric_id}")
+def delete_metric_definition(project_id: str, metric_id: str, db: Session = Depends(get_db)):
+    """Delete a metric definition from a project"""
+    # Verify project exists
+    db_project = get_project_by_id(db, project_id)
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Delete the metric setting
+    from .storage import delete_metric_setting
+    success = delete_metric_setting(db, project_id, metric_id)
+    
+    if not success:
+        raise HTTPException(status_code=404, detail="Metric definition not found")
+    
+    return {"message": "Metric definition deleted successfully"}
 
 # Utility routes
 @router.get("/projects/{project_id}/models")

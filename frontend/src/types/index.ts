@@ -8,7 +8,8 @@ export interface ProjectMetric {
   precision?: number;
   recall?: number;
   f1Score?: number;
-  [key: string]: string | number | undefined;
+  additionalMetrics?: Record<string, unknown>; // Additional custom metrics
+  [key: string]: string | number | unknown | undefined;
 }
 
 export type MetricValueType = 'int' | 'float' | 'percentage' | 'string';

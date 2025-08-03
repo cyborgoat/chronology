@@ -1,3 +1,13 @@
+"""
+Database storage operations for the Chronology application.
+
+This module contains all database operations for:
+- Project management (CRUD operations)
+- Metric record management (CRUD operations)
+- Metric settings management
+- Data conversion between database and API models
+"""
+
 import json
 from datetime import datetime
 from typing import List, Optional
@@ -102,12 +112,35 @@ def update_project_metric_settings(db: Session, project_id: str, settings_list: 
     
     return new_settings
 
+def delete_metric_setting(db: Session, project_id: str, metric_id: str) -> bool:
+    """Delete a specific metric setting from a project"""
+    db_setting = db.query(MetricSettingsDB).filter(
+        MetricSettingsDB.project_id == project_id,
+        MetricSettingsDB.metric_id == metric_id
+    ).first()
+    
+    if not db_setting:
+        return False
+    
+    db.delete(db_setting)
+    db.commit()
+    return True
+
 # Conversion functions between DB models and Pydantic models
 def db_project_to_pydantic(db_project: ProjectDB) -> Project:
     """Convert database project to Pydantic model"""
     # Get metrics for this project
     metrics = []
     for db_metric in db_project.metrics:
+        # Safely parse additional metrics JSON
+        additional_metrics = None
+        if db_metric.additional_metrics:
+            try:
+                additional_metrics = json.loads(db_metric.additional_metrics)
+            except (json.JSONDecodeError, TypeError) as e:
+                print(f"Warning: Failed to parse additional metrics for metric {db_metric.id}: {e}")
+                additional_metrics = None
+        
         metric_dict = {
             'id': db_metric.id,
             'projectId': db_metric.project_id,
@@ -119,7 +152,7 @@ def db_project_to_pydantic(db_project: ProjectDB) -> Project:
             'precision': db_metric.precision,
             'recall': db_metric.recall,
             'f1Score': db_metric.f1_score,
-            'additionalMetrics': json.loads(db_metric.additional_metrics) if db_metric.additional_metrics else None
+            'additionalMetrics': additional_metrics
         }
         metrics.append(ProjectMetric(**metric_dict))
     
@@ -165,6 +198,15 @@ def pydantic_project_to_db(project: Project) -> dict:
 
 def pydantic_metric_to_db(metric: ProjectMetric) -> dict:
     """Convert Pydantic metric to database model dict"""
+    # Safely serialize additional metrics to JSON
+    additional_metrics_json = None
+    if metric.additionalMetrics is not None:
+        try:
+            additional_metrics_json = json.dumps(metric.additionalMetrics)
+        except (TypeError, ValueError) as e:
+            print(f"Warning: Failed to serialize additional metrics for metric {metric.id}: {e}")
+            additional_metrics_json = None
+    
     return {
         'id': metric.id,
         'project_id': metric.projectId,
@@ -176,7 +218,7 @@ def pydantic_metric_to_db(metric: ProjectMetric) -> dict:
         'precision': metric.precision,
         'recall': metric.recall,
         'f1_score': metric.f1Score,
-        'additional_metrics': json.dumps(metric.additionalMetrics) if metric.additionalMetrics else None
+        'additional_metrics': additional_metrics_json
     }
 
 def pydantic_setting_to_db(setting: MetricSettings, project_id: str) -> dict:

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Plus, X, RotateCcw } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Plus, X, RotateCcw, Pencil } from 'lucide-react';
 import { useProjects } from '../contexts/useProjectContext';
-import { getDefaultMetricsConfig } from '../services/api';
+import { getDefaultMetricsConfig, ProjectsApi } from '../services/api';
 import type { MetricSettings, MetricValueType, MetricType } from '../types';
 import {
   Card,
@@ -25,6 +25,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Tooltip,
   TooltipContent,
@@ -58,22 +66,46 @@ export function MetricsConfig() {
     enabled: true,
     description: ''
   });
+  const [editingMetric, setEditingMetric] = useState<MetricSettings | null>(null);
+  const [isEditPopoverOpen, setIsEditPopoverOpen] = useState(false);
+  const isSavingRef = useRef(false);
+  const isInitialLoadRef = useRef(true);
+  const previousMetricsConfigRef = useRef<string>('');
 
   // Load project's metrics configuration
   useEffect(() => {
     if (selectedProject) {
+      // Mark as initial load to prevent auto-save
+      isInitialLoadRef.current = true;
+      
       const projectMetricsConfig = selectedProject.metricsConfig;
       if (projectMetricsConfig && projectMetricsConfig.length > 0) {
         setMetricsConfig(projectMetricsConfig);
+        // Update the ref to track initial config
+        previousMetricsConfigRef.current = JSON.stringify(projectMetricsConfig);
+        // Mark that initial load is complete after state update
+        setTimeout(() => {
+          isInitialLoadRef.current = false;
+        }, 100);
       } else {
         // If no metrics config exists, initialize with default metrics
         const defaultMetrics = getDefaultMetricsConfig();
         setMetricsConfig(defaultMetrics);
-        // Save the default metrics to the project
-        updateProjectMetricsConfig(selectedProject.id, defaultMetrics);
+        previousMetricsConfigRef.current = JSON.stringify(defaultMetrics);
+        
+        // Save the default metrics to the project - but prevent auto-save conflict
+        setTimeout(async () => {
+          try {
+            await updateProjectMetricsConfig(selectedProject.id, defaultMetrics);
+          } catch (error) {
+            console.error('Failed to save default metrics:', error);
+          } finally {
+            isInitialLoadRef.current = false;
+          }
+        }, 100);
       }
     }
-  }, [selectedProject, updateProjectMetricsConfig]);
+  }, [selectedProject]);
 
   // Sync with TimelineChart selections when metrics config or chart mode changes
   useEffect(() => {
@@ -96,22 +128,38 @@ export function MetricsConfig() {
 
   // Auto-save when metrics config changes
   useEffect(() => {
+    // Skip auto-save during initial load or if already saving
+    if (isInitialLoadRef.current || isSavingRef.current) {
+      return;
+    }
+
+    // Check if metrics config actually changed by comparing serialized version
+    const currentConfigStr = JSON.stringify(metricsConfig);
+    if (previousMetricsConfigRef.current === currentConfigStr) {
+      return; // No actual change, skip save
+    }
+
     const saveChanges = async () => {
-      if (selectedProject && metricsConfig.length > 0) {
+      if (selectedProject && metricsConfig.length > 0 && !isSavingRef.current) {
         try {
+          isSavingRef.current = true;
           await updateProjectMetricsConfig(selectedProject.id, metricsConfig);
+          // Update the ref after successful save
+          previousMetricsConfigRef.current = currentConfigStr;
         } catch (error) {
           console.error('Failed to save metrics configuration:', error);
           setErrorMessage('Failed to save changes. Please try again.');
           // Clear error after 5 seconds
           setTimeout(() => setErrorMessage(''), 5000);
+        } finally {
+          isSavingRef.current = false;
         }
       }
     };
 
     const timer = setTimeout(saveChanges, 500);
     return () => clearTimeout(timer);
-  }, [metricsConfig, selectedProject, updateProjectMetricsConfig]);
+  }, [metricsConfig, selectedProject]);
 
   const toggleMetric = (metricId: string) => {
     // First, determine the current state to know what the new state will be
@@ -158,10 +206,76 @@ export function MetricsConfig() {
     }
   };
 
-  const deleteCustomMetric = (metricId: string) => {
+  const deleteCustomMetric = async (metricId: string) => {
     // Only allow deletion of custom metrics (not default ones)
-    if (!isDefaultMetric(metricId)) {
-      setMetricsConfig(prev => prev.filter(metric => metric.id !== metricId));
+    if (!isDefaultMetric(metricId) && selectedProject) {
+      // Show warning dialog for custom metric deletion
+      const metricName = metricsConfig.find(m => m.id === metricId)?.name || metricId;
+      const confirmed = confirm(
+        `⚠️ WARNING: Deleting the custom metric "${metricName}" will permanently remove:\n\n` +
+        `• The metric definition from this project\n` +
+        `• ALL data points that contain this metric\n` +
+        `• Any charts or visualizations using this metric\n\n` +
+        `This action cannot be undone. Are you sure you want to continue?`
+      );
+      
+      if (!confirmed) {
+        return;
+      }
+
+      try {
+        const success = await ProjectsApi.deleteMetricDefinition(selectedProject.id, metricId);
+        if (success) {
+          setMetricsConfig(prev => prev.filter(metric => metric.id !== metricId));
+        } else {
+          setErrorMessage('Failed to delete metric. Please try again.');
+          setTimeout(() => setErrorMessage(''), 5000);
+        }
+      } catch (error) {
+        console.error('Error deleting metric:', error);
+        setErrorMessage('Failed to delete metric. Please try again.');
+        setTimeout(() => setErrorMessage(''), 5000);
+      }
+    }
+  };
+
+  const editMetric = (metric: MetricSettings) => {
+    console.log('Edit metric clicked:', metric);
+    setEditingMetric(metric);
+    setIsEditPopoverOpen(true);
+    console.log('Dialog state set to open');
+  };
+
+  const saveEditedMetric = async () => {
+    console.log('Save edited metric called:', editingMetric);
+    if (!editingMetric || !selectedProject) return;
+
+    try {
+      // Temporarily disable auto-save to prevent double API calls
+      isSavingRef.current = true;
+      
+      // Update the metric in the local state
+      setMetricsConfig(prev => 
+        prev.map(metric => 
+          metric.id === editingMetric.id ? editingMetric : metric
+        )
+      );
+      
+      // Save to backend (using the updated config)
+      const updatedConfig = metricsConfig.map(metric => 
+        metric.id === editingMetric.id ? editingMetric : metric
+      );
+      await updateProjectMetricsConfig(selectedProject.id, updatedConfig);
+      
+      setIsEditPopoverOpen(false);
+      setEditingMetric(null);
+    } catch (error) {
+      console.error('Error saving edited metric:', error);
+      setErrorMessage('Failed to save metric changes. Please try again.');
+      setTimeout(() => setErrorMessage(''), 5000);
+    } finally {
+      // Re-enable auto-save
+      isSavingRef.current = false;
     }
   };
 
@@ -426,6 +540,129 @@ export function MetricsConfig() {
                   </div>
                 </PopoverContent>
               </Popover>
+
+              {/* Edit Metric Dialog */}
+              <Dialog open={isEditPopoverOpen} onOpenChange={(open) => {
+                console.log('Dialog onOpenChange called with:', open);
+                setIsEditPopoverOpen(open);
+              }}>
+                <DialogContent className="sm:max-w-[425px]">
+                  {editingMetric && (
+                    <>
+                      <DialogHeader>
+                        <DialogTitle>Edit Metric</DialogTitle>
+                        <DialogDescription>
+                          Update metric properties. Click save when you're done.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4">
+                        <div className="grid gap-3">
+                          <Label htmlFor="edit-name">Name*</Label>
+                          <Input
+                            id="edit-name"
+                            value={editingMetric.name}
+                            onChange={(e) => setEditingMetric(prev => prev ? { ...prev, name: e.target.value } : null)}
+                            placeholder="Metric name"
+                          />
+                        </div>
+                        <div className="grid gap-3">
+                          <Label htmlFor="edit-type">Type*</Label>
+                          <Select 
+                            value={editingMetric.type} 
+                            onValueChange={(value: MetricValueType) => setEditingMetric(prev => prev ? { ...prev, type: value } : null)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="int">Integer</SelectItem>
+                              <SelectItem value="float">Float</SelectItem>
+                              <SelectItem value="percentage">Percentage</SelectItem>
+                              <SelectItem value="string">String</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid gap-3">
+                          <Label htmlFor="edit-unit">Unit</Label>
+                          <Input
+                            id="edit-unit"
+                            value={editingMetric.unit || ''}
+                            onChange={(e) => setEditingMetric(prev => prev ? { ...prev, unit: e.target.value } : null)}
+                            placeholder="%, ms (optional)"
+                          />
+                        </div>
+                        <div className="grid gap-3">
+                          <Label htmlFor="edit-description">Description</Label>
+                          <Input
+                            id="edit-description"
+                            value={editingMetric.description || ''}
+                            onChange={(e) => setEditingMetric(prev => prev ? { ...prev, description: e.target.value } : null)}
+                            placeholder="Brief description (optional)"
+                          />
+                        </div>
+                        <div className="grid gap-3">
+                          <Label htmlFor="edit-color">Color</Label>
+                          <Input
+                            id="edit-color"
+                            type="color"
+                            value={editingMetric.color}
+                            onChange={(e) => setEditingMetric(prev => prev ? { ...prev, color: e.target.value } : null)}
+                          />
+                        </div>
+                        {(editingMetric.type === 'int' || editingMetric.type === 'float' || editingMetric.type === 'percentage') && (
+                          <>
+                            <div className="grid gap-3">
+                              <Label htmlFor="edit-min">Min</Label>
+                              <Input
+                                id="edit-min"
+                                type="number"
+                                step="any"
+                                value={editingMetric.min !== undefined ? editingMetric.min : ''}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setEditingMetric(prev => prev ? { 
+                                    ...prev, 
+                                    min: value === '' ? undefined : parseFloat(value) 
+                                  } : null);
+                                }}
+                                placeholder="optional"
+                              />
+                            </div>
+                            <div className="grid gap-3">
+                              <Label htmlFor="edit-max">Max</Label>
+                              <Input
+                                id="edit-max"
+                                type="number"
+                                step="any"
+                                value={editingMetric.max !== undefined ? editingMetric.max : ''}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setEditingMetric(prev => prev ? { 
+                                    ...prev, 
+                                    max: value === '' ? undefined : parseFloat(value) 
+                                  } : null);
+                                }}
+                                placeholder="optional"
+                              />
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => {
+                          setIsEditPopoverOpen(false);
+                          setEditingMetric(null);
+                        }}>
+                          Cancel
+                        </Button>
+                        <Button onClick={saveEditedMetric}>
+                          Save changes
+                        </Button>
+                      </DialogFooter>
+                    </>
+                  )}
+                </DialogContent>
+              </Dialog>
             </TooltipProvider>
           </div>
         </div>
@@ -520,6 +757,21 @@ export function MetricsConfig() {
                                       <div>Status: {metric.enabled ? "Enabled" : "Disabled"}</div>
                                     </div>
                                   </div>
+                                </TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => editMetric(metric)}
+                                    className="h-6 w-6 p-0 hover:bg-blue-50 hover:text-blue-600 rounded-full"
+                                  >
+                                    <Pencil className="w-3 h-3" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <div className="text-xs">Edit custom metric</div>
                                 </TooltipContent>
                               </Tooltip>
                               <Tooltip>

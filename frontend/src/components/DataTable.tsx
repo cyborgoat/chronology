@@ -27,13 +27,13 @@ export function DataTable() {
     selectedProject,
     updateMetric,
     deleteMetric,
-    addMetric,
+    addMetricRecord,
     getAvailableModels,
   } = useProjects();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<ProjectMetric>>({});
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newMetric, setNewMetric] = useState<Partial<ProjectMetric>>({
+  const [newMetricRecord, setNewMetricRecord] = useState<Partial<ProjectMetric>>({
     timestamp: new Date().toISOString().split("T")[0],
     modelName: "",
   });
@@ -56,12 +56,51 @@ export function DataTable() {
 
   const handleEdit = (metric: ProjectMetric) => {
     setEditingId(metric.id);
-    setEditValues(metric);
+    
+    // Create edit values with custom metrics extracted from additionalMetrics
+    const editVals: Partial<ProjectMetric> & Record<string, any> = {
+      ...metric
+    };
+    
+    // Extract custom metrics from additionalMetrics to top level for easier editing
+    if (metric.additionalMetrics) {
+      Object.entries(metric.additionalMetrics).forEach(([key, value]) => {
+        editVals[key] = value;
+      });
+    }
+    
+    setEditValues(editVals);
   };
 
   const handleSave = () => {
     if (editingId && selectedProject) {
-      updateMetric(selectedProject.id, editingId, editValues);
+      // Separate default metrics from custom metrics
+      const defaultMetricUpdates: Partial<ProjectMetric> = {
+        timestamp: editValues.timestamp,
+        modelName: editValues.modelName,
+        modelVersion: editValues.modelVersion,
+        accuracy: editValues.accuracy,
+        loss: editValues.loss,
+        precision: editValues.precision,
+        recall: editValues.recall,
+        f1Score: editValues.f1Score,
+      };
+
+      // Extract custom metrics for additionalMetrics
+      const customMetricsData: Record<string, any> = {};
+      enabledCustomMetrics.forEach(customId => {
+        const value = (editValues as Record<string, unknown>)[customId];
+        if (value !== undefined && value !== null && value !== '') {
+          customMetricsData[customId] = value;
+        }
+      });
+
+      // Add additionalMetrics if there are custom metrics
+      if (Object.keys(customMetricsData).length > 0) {
+        defaultMetricUpdates.additionalMetrics = customMetricsData;
+      }
+
+      updateMetric(selectedProject.id, editingId, defaultMetricUpdates);
       setEditingId(null);
       setEditValues({});
     }
@@ -75,16 +114,42 @@ export function DataTable() {
   const handleDelete = (metricId: string) => {
     if (
       selectedProject &&
-      confirm("Are you sure you want to delete this metric?")
+      confirm("Are you sure you want to delete this data record?")
     ) {
       deleteMetric(selectedProject.id, metricId);
     }
   };
 
-  const handleAddMetric = () => {
-    if (selectedProject && newMetric.timestamp && newMetric.modelName) {
-      addMetric(selectedProject.id, newMetric as Omit<ProjectMetric, "id">);
-      setNewMetric({
+  const handleAddMetricRecord = () => {
+    if (selectedProject && newMetricRecord.timestamp && newMetricRecord.modelName) {
+      // Separate default metrics from custom metrics
+      const defaultMetricData: Partial<ProjectMetric> = {
+        timestamp: newMetricRecord.timestamp,
+        modelName: newMetricRecord.modelName,
+        modelVersion: newMetricRecord.modelVersion,
+        accuracy: newMetricRecord.accuracy,
+        loss: newMetricRecord.loss,
+        precision: newMetricRecord.precision,
+        recall: newMetricRecord.recall,
+        f1Score: newMetricRecord.f1Score,
+      };
+
+      // Extract custom metrics for additionalMetrics
+      const customMetricsData: Record<string, any> = {};
+      enabledCustomMetrics.forEach(customId => {
+        const value = (newMetricRecord as Record<string, unknown>)[customId];
+        if (value !== undefined && value !== null && value !== '') {
+          customMetricsData[customId] = value;
+        }
+      });
+
+      // Add additionalMetrics if there are custom metrics
+      if (Object.keys(customMetricsData).length > 0) {
+        defaultMetricData.additionalMetrics = customMetricsData;
+      }
+
+      addMetricRecord(selectedProject.id, defaultMetricData as Omit<ProjectMetric, "id">);
+      setNewMetricRecord({
         timestamp: new Date().toISOString().split("T")[0],
         modelName: "",
       });
@@ -134,15 +199,15 @@ export function DataTable() {
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>{selectedProject.name} - Data Table</CardTitle>
+            <CardTitle>{selectedProject.name} - Data Records</CardTitle>
             <CardDescription>
-              Manage and edit your project metrics data across different AI
+              Manage and edit your project metric data records across different AI
               models
             </CardDescription>
           </div>
           <Button onClick={() => setShowAddForm(true)} size="sm">
             <Plus className="w-4 h-4 mr-2" />
-            Add Data
+            Add Record
           </Button>
         </div>
       </CardHeader>
@@ -234,7 +299,7 @@ export function DataTable() {
                             min="0"
                             max="1"
                             step="0.001"
-                            value={editValues[key] || ""}
+                            value={String(editValues[key] || "")}
                             onChange={(e) =>
                               setEditValues((prev) => ({
                                 ...prev,
@@ -246,7 +311,7 @@ export function DataTable() {
                             className="w-20"
                           />
                         ) : (
-                          typeof metric[key] === 'number' ? metric[key].toFixed(3) : metric[key] || "-"
+                          typeof metric[key] === 'number' ? (metric[key] as number).toFixed(3) : String(metric[key] || "-")
                         )}
                       </TableCell>
                     ))}
@@ -256,7 +321,7 @@ export function DataTable() {
                           <Input
                             type="number"
                             step="0.001"
-                            value={editValues[customId] || ""}
+                            value={String(editValues[customId] || "")}
                             onChange={(e) =>
                               setEditValues((prev) => ({
                                 ...prev,
@@ -268,7 +333,7 @@ export function DataTable() {
                             className="w-20"
                           />
                         ) : (
-                          (metric[customId] as number)?.toFixed(3) || "-"
+                          (metric.additionalMetrics?.[customId] as number)?.toFixed(3) || "-"
                         )}
                       </TableCell>
                     ))}
@@ -322,9 +387,9 @@ export function DataTable() {
                   <TableCell>
                     <Input
                       type="date"
-                      value={newMetric.timestamp?.split("T")[0] || ""}
+                      value={newMetricRecord.timestamp?.split("T")[0] || ""}
                       onChange={(e) =>
-                        setNewMetric((prev) => ({
+                        setNewMetricRecord((prev) => ({
                           ...prev,
                           timestamp: e.target.value,
                         }))
@@ -335,9 +400,9 @@ export function DataTable() {
                   <TableCell>
                     <Input
                       type="text"
-                      value={newMetric.modelName || ""}
+                      value={newMetricRecord.modelName || ""}
                       onChange={(e) =>
-                        setNewMetric((prev) => ({
+                        setNewMetricRecord((prev) => ({
                           ...prev,
                           modelName: e.target.value,
                         }))
@@ -360,9 +425,9 @@ export function DataTable() {
                         min="0"
                         max="1"
                         step="0.001"
-                        value={newMetric[key] || ""}
+                                                    value={String(newMetricRecord[key] || "")}
                         onChange={(e) =>
-                          setNewMetric((prev) => ({
+                          setNewMetricRecord((prev) => ({
                             ...prev,
                             [key]: e.target.value
                               ? parseFloat(e.target.value)
@@ -379,9 +444,9 @@ export function DataTable() {
                       <Input
                         type="number"
                         step="0.001"
-                        value={(newMetric as any)[customId] || ""}
+                        value={String((newMetricRecord as Record<string, unknown>)[customId] || "")}
                         onChange={(e) =>
-                          setNewMetric((prev) => ({
+                          setNewMetricRecord((prev) => ({
                             ...prev,
                             [customId]: e.target.value
                               ? parseFloat(e.target.value)
@@ -396,7 +461,7 @@ export function DataTable() {
                   <TableCell>
                     <div className="flex gap-2">
                       <Button
-                        onClick={handleAddMetric}
+                        onClick={handleAddMetricRecord}
                         size="sm"
                         variant="ghost"
                         className="text-green-600 hover:text-green-800"
@@ -406,7 +471,7 @@ export function DataTable() {
                       <Button
                         onClick={() => {
                           setShowAddForm(false);
-                          setNewMetric({
+                          setNewMetricRecord({
                             timestamp: new Date().toISOString().split("T")[0],
                             modelName: "",
                           });
@@ -427,7 +492,7 @@ export function DataTable() {
 
         {selectedProject.records.length === 0 && !showAddForm && (
           <div className="text-center py-8 text-muted-foreground">
-            No data available. Click "Add Data" to get started by adding model
+            No data available. Click "Add Record" to get started by adding model
             performance data.
           </div>
         )}

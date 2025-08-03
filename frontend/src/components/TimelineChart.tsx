@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useProjects } from "../contexts/useProjectContext";
 import { metricColors, metricLabels, modelColors } from "../data/sampleData";
-import type { ChartData, MetricType, ChartViewMode, ChartPoint, MetricLabels, MetricColors } from "../types";
+import type { ChartData, MetricType, ChartViewMode, ChartPoint, MetricLabels, MetricColors, ProjectMetric } from "../types";
 import { generateChartData, NivoLineChart } from "./chart";
 import {
   Card,
@@ -13,6 +13,30 @@ import {
 
 interface TimelineChartProps {
   onPointClick?: (point: ChartPoint) => void;
+}
+
+// Helper function to get metric value from record, handling both direct properties and additionalMetrics
+function getMetricValue(record: ProjectMetric, metricId: MetricType): number | undefined {
+  // First check if it's a direct property
+  const directValue = record[metricId as keyof ProjectMetric];
+  if (typeof directValue === 'number') {
+    return directValue;
+  }
+  
+  // Then check in additionalMetrics
+  if (record.additionalMetrics && typeof record.additionalMetrics === 'object') {
+    const additionalValue = record.additionalMetrics[metricId];
+    if (typeof additionalValue === 'number') {
+      return additionalValue;
+    }
+  }
+  
+  return undefined;
+}
+
+// Helper function to check if a metric has a value in a record
+function hasMetricValue(record: ProjectMetric, metricId: MetricType): boolean {
+  return getMetricValue(record, metricId) !== undefined;
 }
 
 export function TimelineChart({ onPointClick }: TimelineChartProps) {
@@ -163,7 +187,7 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
         selectedMetrics.length > 0 &&
         selectedProject.records.some(
           (m) =>
-            selectedMetrics.some((metric) => m[metric] !== undefined) &&
+            selectedMetrics.some((metric) => hasMetricValue(m, metric)) &&
             (selectedModels.length === 0 ||
               selectedModels.includes(m.modelName))
         )
@@ -175,7 +199,7 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
         selectedProject.records.some(
           (m) =>
             selectedModels.includes(m.modelName) &&
-            m[selectedMetricForComparison] !== undefined
+            hasMetricValue(m, selectedMetricForComparison)
         )
       );
     }
@@ -225,7 +249,7 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
         // Find the metric entry that matches this point
         const matchingRecord = selectedProject.records.find(
           (m) =>
-            m.timestamp === point.data.x && m[metricType] === point.data.y
+            m.timestamp === point.data.x && getMetricValue(m, metricType) === point.data.y
         );
         timestamp = matchingRecord?.timestamp;
         modelName = matchingRecord?.modelName as string;
@@ -236,7 +260,7 @@ export function TimelineChart({ onPointClick }: TimelineChartProps) {
           (m) =>
             m.modelName === modelName &&
             m.timestamp === point.data.x &&
-            m[metricType] === point.data.y
+            getMetricValue(m, metricType) === point.data.y
         );
         timestamp = matchingRecord?.timestamp;
       }

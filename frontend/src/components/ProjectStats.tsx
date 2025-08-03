@@ -1,5 +1,6 @@
 import { useProjects } from '../contexts/useProjectContext';
 import { TrendingUp, TrendingDown, BarChart, Calendar } from 'lucide-react';
+import { formatMetricValue } from '../lib/utils';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -38,7 +39,7 @@ export function ProjectStats() {
   };
 
   const formatValue = (value: number | undefined) => {
-    return value !== undefined ? value.toFixed(3) : '-';
+    return formatMetricValue(value);
   };
 
   const formatPercent = (value: number) => {

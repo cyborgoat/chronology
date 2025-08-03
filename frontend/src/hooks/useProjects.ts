@@ -35,8 +35,8 @@ interface UseProjectsReturn {
   deleteProject: (id: string) => Promise<void>;
   updateProjectMetricsConfig: (projectId: string, metricsConfig: MetricSettings[]) => Promise<void>;
   
-  // Metric operations
-  addMetric: (projectId: string, metric: Omit<ProjectMetric, 'id'>) => Promise<void>;
+  // Metric record operations
+  addMetricRecord: (projectId: string, metric: Omit<ProjectMetric, 'id'>) => Promise<void>;
   updateMetric: (projectId: string, metricId: string, updates: Partial<ProjectMetric>) => Promise<void>;
   deleteMetric: (projectId: string, metricId: string) => Promise<void>;
   
@@ -159,10 +159,13 @@ export function useProjects(): UseProjectsReturn {
 
   const updateProjectMetricsConfig = useCallback(async (projectId: string, metricsConfig: MetricSettings[]) => {
     try {
-      const updatedProject = await ProjectsApi.updateProjectMetricsConfig(projectId, metricsConfig);
-      if (updatedProject) {
+      const success = await ProjectsApi.updateProjectMetricsConfig(projectId, metricsConfig);
+      if (success) {
+        // Update the local state directly instead of fetching the project again
         setProjects(prev => prev.map(project => 
-          project.id === projectId ? updatedProject : project
+          project.id === projectId 
+            ? { ...project, metricsConfig }
+            : project
         ));
       }
     } catch (error) {
@@ -170,13 +173,13 @@ export function useProjects(): UseProjectsReturn {
     }
   }, []);
 
-  // Metric operations
-  const addMetric = useCallback(async (projectId: string, metricData: Omit<ProjectMetric, 'id'>) => {
+  // Metric record operations
+  const addMetricRecord = useCallback(async (projectId: string, metricData: Omit<ProjectMetric, 'id'>) => {
     try {
       setMetricsLoading(true);
       const newMetric = await MetricsApi.addMetric(projectId, metricData);
       if (newMetric) {
-        // Reload the specific project to get updated metrics
+        // Reload the specific project to get updated metric records
         const updatedProject = await ProjectsApi.getProject(projectId);
         if (updatedProject) {
           setProjects(prev => prev.map(project => 
@@ -185,7 +188,7 @@ export function useProjects(): UseProjectsReturn {
         }
       }
     } catch (error) {
-      console.error('Failed to add metric:', error);
+      console.error('Failed to add metric record:', error);
     } finally {
       setMetricsLoading(false);
     }
@@ -196,7 +199,7 @@ export function useProjects(): UseProjectsReturn {
       setMetricsLoading(true);
       const updatedMetric = await MetricsApi.updateMetric(projectId, metricId, updates);
       if (updatedMetric) {
-        // Reload the specific project to get updated metrics
+        // Reload the specific project to get updated metric records
         const updatedProject = await ProjectsApi.getProject(projectId);
         if (updatedProject) {
           setProjects(prev => prev.map(project => 
@@ -205,7 +208,7 @@ export function useProjects(): UseProjectsReturn {
         }
       }
     } catch (error) {
-      console.error('Failed to update metric:', error);
+      console.error('Failed to update metric record:', error);
     } finally {
       setMetricsLoading(false);
     }
@@ -216,7 +219,7 @@ export function useProjects(): UseProjectsReturn {
       setMetricsLoading(true);
       const success = await MetricsApi.deleteMetric(projectId, metricId);
       if (success) {
-        // Reload the specific project to get updated metrics
+        // Reload the specific project to get updated metric records
         const updatedProject = await ProjectsApi.getProject(projectId);
         if (updatedProject) {
           setProjects(prev => prev.map(project => 
@@ -225,7 +228,7 @@ export function useProjects(): UseProjectsReturn {
         }
       }
     } catch (error) {
-      console.error('Failed to delete metric:', error);
+      console.error('Failed to delete metric record:', error);
     } finally {
       setMetricsLoading(false);
     }
@@ -274,7 +277,7 @@ export function useProjects(): UseProjectsReturn {
     updateProjectMetricsConfig,
     
     // Metric operations
-    addMetric,
+    addMetricRecord,
     updateMetric,
     deleteMetric,
     

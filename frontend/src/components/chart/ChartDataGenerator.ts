@@ -1,5 +1,41 @@
-import type { ChartData, MetricType, Project } from "../../types";
+import type { ChartData, MetricType, Project, ProjectMetric } from "../../types";
 import { isValidTimestamp, formatTimestampForChart } from "./ChartConfig";
+
+export interface ChartDataGeneratorProps {
+  selectedProject: Project;
+  chartViewMode: "metric-wise" | "model-wise";
+  selectedMetrics: MetricType[];
+  selectedModels: string[];
+  selectedMetricForComparison: MetricType | null;
+  availableModels: string[];
+  getMetricLabel: (metric: MetricType) => string;
+  getMetricColor: (metric: MetricType) => string;
+  modelColors: Record<string, string>;
+}
+
+// Helper function to get metric value from record, handling both direct properties and additionalMetrics
+function getMetricValue(record: ProjectMetric, metricId: MetricType): number | undefined {
+  // First check if it's a direct property
+  const directValue = record[metricId as keyof ProjectMetric];
+  if (typeof directValue === 'number') {
+    return directValue;
+  }
+  
+  // Then check in additionalMetrics
+  if (record.additionalMetrics && typeof record.additionalMetrics === 'object') {
+    const additionalValue = record.additionalMetrics[metricId];
+    if (typeof additionalValue === 'number') {
+      return additionalValue;
+    }
+  }
+  
+  return undefined;
+}
+
+// Helper function to check if a metric has a value in a record
+function hasMetricValue(record: ProjectMetric, metricId: MetricType): boolean {
+  return getMetricValue(record, metricId) !== undefined;
+}
 
 export interface ChartDataGeneratorProps {
   selectedProject: Project;
@@ -52,7 +88,7 @@ export function generateChartData({
     chartData = selectedMetrics.map((metric) => {
       const filteredRecords = selectedProject.records.filter(
         (m) =>
-          m[metric] !== undefined &&
+          hasMetricValue(m, metric) &&
           m.modelName === modelToShow &&
           isValidTimestamp(m.timestamp)
       );
@@ -65,7 +101,7 @@ export function generateChartData({
 
       const data = filteredRecords.map((m) => ({
         x: formatTimestampForChart(m.timestamp),
-        y: m[metric] as number,
+        y: getMetricValue(m, metric) as number,
       }));
 
       console.log(`Generated data points for ${metric}:`, data.length);
@@ -90,7 +126,7 @@ export function generateChartData({
       const filteredRecords = selectedProject.records.filter(
         (m) =>
           m.modelName === modelName &&
-          m[selectedMetricForComparison] !== undefined &&
+          hasMetricValue(m, selectedMetricForComparison) &&
           isValidTimestamp(m.timestamp)
       );
 
@@ -102,7 +138,7 @@ export function generateChartData({
 
       const data = filteredRecords.map((m) => ({
         x: formatTimestampForChart(m.timestamp),
-        y: m[selectedMetricForComparison] as number,
+        y: getMetricValue(m, selectedMetricForComparison) as number,
       }));
 
       console.log(`Generated data points for ${modelName}:`, data.length);

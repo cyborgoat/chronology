@@ -101,7 +101,7 @@ export class ProjectsApi {
   }
 
   // Update project metrics configuration
-  static async updateProjectMetricsConfig(projectId: string, metricsConfig: MetricSettings[]): Promise<Project | null> {
+  static async updateProjectMetricsConfig(projectId: string, metricsConfig: MetricSettings[]): Promise<boolean> {
     console.log('Updating metrics config for project:', projectId);
     try {
       const response = await fetch(`${API_BASE_URL}/projects/${projectId}/metrics-config`, {
@@ -113,15 +113,26 @@ export class ProjectsApi {
       });
       
       console.log('Update metrics config response status:', response.status);
-      
-      if (response.ok) {
-        // Return the updated project
-        return this.getProject(projectId);
-      }
-      return null;
+      return response.ok;
     } catch (error) {
       console.error('Error updating metrics config:', error);
-      return null;
+      return false;
+    }
+  }
+
+  // Delete metric definition
+  static async deleteMetricDefinition(projectId: string, metricId: string): Promise<boolean> {
+    console.log('Deleting metric definition:', metricId);
+    try {
+      const response = await fetch(`${API_BASE_URL}/projects/${projectId}/metrics-definitions/${metricId}`, {
+        method: 'DELETE',
+      });
+      
+      console.log('Delete metric definition response status:', response.status);
+      return response.ok;
+    } catch (error) {
+      console.error('Error deleting metric definition:', error);
+      return false;
     }
   }
 }

@@ -1,3 +1,12 @@
+"""
+Database and API models for the Chronology application.
+
+This module contains:
+- SQLAlchemy database models for projects, metrics, and metric settings
+- Pydantic models for API request/response serialization
+- Type definitions for the application
+"""
+
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any, Union
 from datetime import datetime
@@ -108,7 +117,7 @@ class UpdateProjectRequest(BaseModel):
     color: Optional[str] = None
     metricsConfig: Optional[List[MetricSettings]] = None
 
-class CreateMetricRequest(BaseModel):
+class CreateMetricRecordRequest(BaseModel):
     timestamp: str
     modelName: str
     modelVersion: Optional[str] = None
@@ -118,6 +127,17 @@ class CreateMetricRequest(BaseModel):
     recall: Optional[float] = None
     f1Score: Optional[float] = None
     additionalMetrics: Optional[Dict[str, Any]] = None
+
+class CreateMetricRequest(BaseModel):
+    metricId: str
+    name: str
+    type: str  # 'int', 'float', 'percentage', 'string'
+    color: str
+    unit: Optional[str] = None
+    enabled: bool = True
+    min: Optional[float] = None
+    max: Optional[float] = None
+    description: Optional[str] = None
 
 class UpdateMetricRequest(BaseModel):
     timestamp: Optional[str] = None

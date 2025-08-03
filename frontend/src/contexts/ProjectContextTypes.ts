@@ -25,7 +25,7 @@ export interface ProjectContextType {
   selectProject: (id: string | null) => void;
   setSelectedProjectIds: (ids: string[]) => void;
   setSelectedModels: (models: string[]) => void;
-  addMetric: (projectId: string, metric: Omit<ProjectMetric, 'id'>) => Promise<void>;
+  addMetricRecord: (projectId: string, metric: Omit<ProjectMetric, 'id'>) => Promise<void>;
   updateMetric: (projectId: string, metricId: string, updates: Partial<ProjectMetric>) => Promise<void>;
   deleteMetric: (projectId: string, metricId: string) => Promise<void>;
   setSelectedMetrics: (metrics: MetricType[]) => void;
