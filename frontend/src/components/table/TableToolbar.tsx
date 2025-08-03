@@ -5,25 +5,17 @@ import { Badge } from "@/components/ui/badge";
 import { tableStyles } from "../../utils/table/tableCore";
 
 interface TableToolbarProps {
-  selectedProject: any;
+  selectedProject: { name: string; records: Array<{ id: string }> };
   globalEditMode: boolean;
   onToggleEditMode: (pressed: boolean) => void;
   onShowAddForm: () => void;
-  onBulkSave: () => void;
-  onBulkCancel: () => void;
-  hasPendingChanges: boolean;
-  pendingChangesSummary: { edits: number; deletions: number; additions: number };
 }
 
 export function TableToolbar({
   selectedProject,
   globalEditMode,
   onToggleEditMode,
-  onShowAddForm,
-  onBulkSave,
-  onBulkCancel,
-  hasPendingChanges,
-  pendingChangesSummary
+  onShowAddForm
 }: TableToolbarProps) {
   return (
     <div className="flex justify-between items-center">

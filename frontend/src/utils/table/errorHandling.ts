@@ -5,14 +5,14 @@
 export interface ApiError {
   message: string;
   status?: number;
-  details?: any;
+  details?: unknown;
 }
 
 export class ApiErrorHandler {
   /**
    * Handle API errors and return a standardized error object
    */
-  static handleError(error: any): ApiError {
+  static handleError(error: unknown): ApiError {
     if (error instanceof Error) {
       // Check if it's an API error with status code
       const statusMatch = error.message.match(/API Error (\d+):/);
@@ -40,7 +40,7 @@ export class ApiErrorHandler {
   /**
    * Check if an error is a 404 (Not Found) error
    */
-  static isNotFoundError(error: any): boolean {
+  static isNotFoundError(error: unknown): boolean {
     const apiError = this.handleError(error);
     return apiError.status === 404;
   }
@@ -48,7 +48,7 @@ export class ApiErrorHandler {
   /**
    * Check if an error is a 400 (Bad Request) error
    */
-  static isBadRequestError(error: any): boolean {
+  static isBadRequestError(error: unknown): boolean {
     const apiError = this.handleError(error);
     return apiError.status === 400;
   }
@@ -56,7 +56,7 @@ export class ApiErrorHandler {
   /**
    * Check if an error is a 422 (Validation Error) error
    */
-  static isValidationError(error: any): boolean {
+  static isValidationError(error: unknown): boolean {
     const apiError = this.handleError(error);
     return apiError.status === 422;
   }
@@ -64,7 +64,7 @@ export class ApiErrorHandler {
   /**
    * Get a user-friendly error message
    */
-  static getErrorMessage(error: any): string {
+  static getErrorMessage(error: unknown): string {
     const apiError = this.handleError(error);
     
     // Handle specific error types

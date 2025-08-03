@@ -23,10 +23,7 @@ interface TableCellProps {
 }
 
 export function DataTableCell({
-  metric,
-  field,
   isEditing,
-  isGlobalEdit,
   isMarkedForDeletion,
   value,
   inputType = "text",
@@ -35,7 +32,6 @@ export function DataTableCell({
   max,
   step,
   datalistId,
-  datalistOptions,
   onValueChange,
   displayValue,
   displayComponent

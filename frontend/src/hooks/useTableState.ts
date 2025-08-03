@@ -4,7 +4,7 @@ import { createEditValues, createInitialRecord, separateMetrics } from "../utils
 import type { TableEditState, TableActionHandlers } from "../utils/table/tableUtils";
 
 export function useTableState(
-  selectedProject: any,
+  selectedProject: { id: string; name: string; records: ProjectMetric[] },
   updateMetricRecord: (projectId: string, metricId: string, updates: Partial<ProjectMetric>) => Promise<void>,
   deleteMetricRecord: (projectId: string, metricId: string) => Promise<void>,
   addMetricRecord: (projectId: string, metricData: Omit<ProjectMetric, "id">) => Promise<void>,
@@ -109,7 +109,7 @@ export function useTableState(
     setGlobalEditMode(false);
   };
 
-  const updateBulkEditValue = (metricId: string, field: string, value: any) => {
+  const updateBulkEditValue = (metricId: string, field: string, value: string | number) => {
     setBulkEditValues(prev => ({
       ...prev,
       [metricId]: {
@@ -119,7 +119,7 @@ export function useTableState(
     }));
   };
 
-  const updateEditValue = (field: string, value: any) => {
+  const updateEditValue = (field: string, value: string | number) => {
     setEditValues(prev => ({
       ...prev,
       [field]: value
@@ -138,7 +138,7 @@ export function useTableState(
     });
   };
 
-  const updateGlobalAddRecord = (index: number, field: string, value: any) => {
+  const updateGlobalAddRecord = (index: number, field: string, value: string | number) => {
     setGlobalAddRecords(prev => {
       const updated = [...prev];
       updated[index] = {

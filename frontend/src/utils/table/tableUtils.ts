@@ -1,4 +1,4 @@
-import type { ProjectMetric, MetricType } from "../../types";
+import type { ProjectMetric } from "../../types";
 import { tableStyles } from "./tableCore";
 
 /**
@@ -29,10 +29,10 @@ export interface TableActionHandlers {
   handleBulkCancel: () => void;
   handleAddMetricRecord: () => void;
   handleSort: (key: string) => void;
-  updateBulkEditValue: (metricId: string, field: string, value: any) => void;
-  updateEditValue: (field: string, value: any) => void;
+  updateBulkEditValue: (metricId: string, field: string, value: string | number) => void;
+  updateEditValue: (field: string, value: string | number) => void;
   toggleBulkDelete: (metricId: string) => void;
-  updateGlobalAddRecord: (index: number, field: string, value: any) => void;
+  updateGlobalAddRecord: (index: number, field: string, value: string | number) => void;
 
   handleToggleGlobalEditMode: (pressed: boolean) => void;
   handleConfirmSave: () => void;
@@ -161,7 +161,7 @@ export const tableValidationUtils = {
   /**
    * Format metric value for display
    */
-  formatMetricValue: (value: any): string => {
+  formatMetricValue: (value: string | number | undefined): string => {
     if (typeof value === 'number') {
       return value.toFixed(3);
     }

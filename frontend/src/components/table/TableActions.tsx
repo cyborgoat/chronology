@@ -1,11 +1,10 @@
 import { Pencil, Trash2, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { ProjectMetric } from "../../types";
+
 import { tableStyles } from "../../utils/table/tableCore";
 import { TABLE_CONSTANTS } from "../../utils/table/tableUtils";
 
 interface TableActionsProps {
-  metric: ProjectMetric;
   isGlobalEdit: boolean;
   isInSingleEdit: boolean;
   isMarkedForDeletion: boolean;
@@ -17,7 +16,6 @@ interface TableActionsProps {
 }
 
 export function TableActions({
-  metric,
   isGlobalEdit,
   isInSingleEdit,
   isMarkedForDeletion,

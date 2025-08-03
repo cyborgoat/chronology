@@ -34,7 +34,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Save, X } from "lucide-react";
 
 interface DataTableContentProps {
-  selectedProject: any;
+  selectedProject: { id: string; name: string; records: ProjectMetric[]; metricsConfig?: Array<{ id: string; enabled: boolean }> };
   updateMetricRecord: (projectId: string, metricId: string, updates: Partial<ProjectMetric>) => Promise<void>;
   deleteMetricRecord: (projectId: string, metricId: string) => Promise<void>;
   addMetricRecord: (projectId: string, metricData: Omit<ProjectMetric, "id">) => Promise<void>;
@@ -86,7 +86,7 @@ export function DataTableContent({
 
   const handleAddMetricRecord = () => {
     if (selectedProject && newMetricRecord.timestamp && newMetricRecord.modelName) {
-      const defaultMetricData = separateMetrics(newMetricRecord, enabledCustomMetrics);
+      const defaultMetricData = separateMetrics(newMetricRecord as Partial<ProjectMetric> & Record<string, string | number>, enabledCustomMetrics);
       addMetricRecord(selectedProject.id, defaultMetricData as Omit<ProjectMetric, "id">);
       setNewMetricRecord(createInitialRecord());
       setShowAddForm(false);
@@ -104,10 +104,6 @@ export function DataTableContent({
           globalEditMode={state.globalEditMode}
           onToggleEditMode={handlers.handleToggleGlobalEditMode}
           onShowAddForm={() => setShowAddForm(true)}
-          onBulkSave={handlers.handleBulkSave}
-          onBulkCancel={handlers.handleBulkCancel}
-          hasPendingChanges={hasPendingChanges}
-          pendingChangesSummary={pendingChangesSummary}
         />
       </CardHeader>
       

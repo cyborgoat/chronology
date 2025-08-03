@@ -67,7 +67,7 @@ export function sortMetrics(
  * Gets available metrics from project configuration
  */
 export function getAvailableMetrics(
-  metricsConfig: any[] | undefined,
+  metricsConfig: Array<{ id: string; enabled: boolean }> | undefined,
   metricKeys: MetricType[]
 ) {
   if (!metricsConfig) return { defaultMetrics: [], customMetrics: [] };
@@ -87,7 +87,7 @@ export function getAvailableMetrics(
  * Separates default and custom metrics from a record
  */
 export function separateMetrics(
-  values: Partial<ProjectMetric> & Record<string, any>,
+  values: Partial<ProjectMetric> & Record<string, string | number>,
   enabledCustomMetrics: string[]
 ) {
   const defaultMetricUpdates: Partial<ProjectMetric> = {
@@ -101,7 +101,7 @@ export function separateMetrics(
     f1Score: values.f1Score,
   };
 
-  const customMetricsData: Record<string, any> = {};
+  const customMetricsData: Record<string, string | number> = {};
   enabledCustomMetrics.forEach(customId => {
     const value = values[customId];
     if (value !== undefined && value !== null && value !== '') {
@@ -119,8 +119,8 @@ export function separateMetrics(
 /**
  * Creates initial edit values from a metric record
  */
-export function createEditValues(metric: ProjectMetric): Partial<ProjectMetric> & Record<string, any> {
-  const editVals: Partial<ProjectMetric> & Record<string, any> = {
+export function createEditValues(metric: ProjectMetric): Partial<ProjectMetric> & Record<string, unknown> {
+  const editVals: Partial<ProjectMetric> & Record<string, unknown> = {
     ...metric
   };
   

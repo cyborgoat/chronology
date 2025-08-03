@@ -8,7 +8,7 @@ import { TABLE_CONSTANTS } from "../../utils/table/tableUtils";
 interface TableHeaderProps {
   enabledDefaultMetrics: MetricType[];
   enabledCustomMetrics: string[];
-  customMetrics: any[];
+  customMetrics: Array<{ id: string; name?: string }>;
   sortConfig: { key: string; direction: 'asc' | 'desc' } | null;
   onSort: (key: string) => void;
 }

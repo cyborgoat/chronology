@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { } from "react";
 import type {
   ChartData,
   MetricType,
@@ -9,7 +9,7 @@ import type {
 import { generateChartData, NivoLineChart } from "./chart";
 import { ViewModeToggle, MetricSelector, ModelSelector, EmptyState } from "./chart";
 import { useChartControls } from "../hooks/useChartControls";
-import { hasMetricValue, getMetricLabel, getMetricColor } from "../utils";
+import { hasMetricValue, getMetricLabel, getMetricColor } from "../utils/metricUtils";
 import { modelColors } from "../data/sampleData";
 import {
   Card,
