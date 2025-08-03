@@ -11,16 +11,17 @@ export interface NivoLineChartProps {
   selectedMetricForComparison: MetricType | null;
   getMetricLabel: (metric: MetricType) => string;
   onPointClick?: (point: ChartPoint) => void;
+  currentModelName?: string;
 }
 
 export function NivoLineChart({
   chartData,
-  selectedProject,
   chartViewMode,
   selectedMetrics,
   selectedMetricForComparison,
   getMetricLabel,
   onPointClick,
+  currentModelName,
 }: NivoLineChartProps) {
   const handlePointClick = (point: unknown) => {
     if (onPointClick) {
@@ -81,11 +82,11 @@ export function NivoLineChart({
         return (
           <ChartTooltip
             point={chartPoint}
-            selectedProject={selectedProject}
             chartViewMode={chartViewMode}
             selectedMetrics={selectedMetrics}
             selectedMetricForComparison={selectedMetricForComparison}
             getMetricLabel={getMetricLabel}
+            currentModelName={currentModelName}
           />
         );
       }}

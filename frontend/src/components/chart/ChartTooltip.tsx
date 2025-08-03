@@ -1,67 +1,38 @@
-import type { MetricType, ChartPoint, Project, NivoChartPoint } from "../../types";
+import type { MetricType, ChartPoint, NivoChartPoint } from "../../types";
 
 export interface ChartTooltipProps {
   point: ChartPoint | NivoChartPoint;
-  selectedProject: Project;
   chartViewMode: "metric-wise" | "model-wise";
   selectedMetrics: MetricType[];
   selectedMetricForComparison: MetricType | null;
   getMetricLabel: (metric: MetricType) => string;
+  currentModelName?: string;
 }
 
 export function ChartTooltip({
   point,
-  selectedProject,
   chartViewMode,
   selectedMetrics,
   selectedMetricForComparison,
   getMetricLabel,
+  currentModelName,
 }: ChartTooltipProps) {
-  // Safely extract and format the timestamp
   const formatDate = (dateValue: string | Date | unknown): string => {
     if (!dateValue) return "Unknown";
-    
-    if (typeof dateValue === 'string') {
-      return new Date(dateValue).toLocaleDateString();
-    }
-    
-    if (dateValue instanceof Date) {
-      return dateValue.toLocaleDateString();
-    }
-    
+    if (typeof dateValue === 'string') return new Date(dateValue).toLocaleDateString();
+    if (dateValue instanceof Date) return dateValue.toLocaleDateString();
     return String(dateValue);
   };
 
-  const metricType =
-    chartViewMode === "metric-wise"
-      ? selectedMetrics.find((m) => getMetricLabel(m) === point.seriesId)
-      : selectedMetricForComparison;
+  const metricType = chartViewMode === "metric-wise"
+    ? selectedMetrics.find((m) => getMetricLabel(m) === point.seriesId)
+    : selectedMetricForComparison;
 
-  const modelName =
-    chartViewMode === "metric-wise"
-      ? selectedProject.records.find(
-          (m) => {
-            // Handle both string and Date comparisons for x value
-            const pointX = point.data.x instanceof Date 
-              ? point.data.x.toISOString().split('T')[0] 
-              : String(point.data.x);
-            return m.timestamp === pointX && m[metricType as MetricType] === point.data.y;
-          }
-        )?.modelName
-      : point.seriesId;
-
-  const timestamp = selectedProject.records.find(
-    (m) => {
-      const pointX = point.data.x instanceof Date 
-        ? point.data.x.toISOString().split('T')[0] 
-        : String(point.data.x);
-      return m.timestamp === pointX &&
-        (chartViewMode === "metric-wise"
-          ? m[metricType as MetricType] === point.data.y
-          : m.modelName === modelName &&
-            m[metricType as MetricType] === point.data.y);
-    }
-  )?.timestamp;
+  // For metric-wise view, use the currentModelName parameter
+  // For model-wise view, the seriesId is the model name
+  const modelName = chartViewMode === "metric-wise"
+    ? currentModelName
+    : point.seriesId;
 
   return (
     <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-lg min-w-64">
@@ -70,48 +41,22 @@ export function ChartTooltip({
       </div>
       <div className="space-y-2 text-sm">
         <div className="flex justify-between">
-          <span className="text-gray-600">
-            <strong>Date:</strong>
-          </span>
-          <span className="font-medium">
-            {timestamp ? formatDate(timestamp) : formatDate(point.data.x)}
-          </span>
+          <span className="text-gray-600"><strong>Date:</strong></span>
+          <span className="font-medium">{formatDate(point.data.x)}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-gray-600">
-            <strong>Model:</strong>
-          </span>
+          <span className="text-gray-600"><strong>Model:</strong></span>
           <span className="font-medium">{modelName || "Unknown"}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-gray-600">
-            <strong>Metric Type:</strong>
-          </span>
-          <span className="font-medium">
-            {metricType ? getMetricLabel(metricType) : "Unknown"}
-          </span>
+          <span className="text-gray-600"><strong>Metric:</strong></span>
+          <span className="font-medium">{metricType ? getMetricLabel(metricType) : "Unknown"}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-gray-600">
-            <strong>Value:</strong>
-          </span>
+          <span className="text-gray-600"><strong>Value:</strong></span>
           <span className="font-bold text-blue-600">
-            {typeof point.data.y === "number"
-              ? point.data.y.toFixed(3)
-              : point.data.y}
+            {typeof point.data.y === "number" ? point.data.y.toFixed(3) : point.data.y}
           </span>
-        </div>
-        <hr className="my-2 border-gray-200" />
-        <div className="text-xs text-gray-500 space-y-0.5">
-          <div>
-            <strong>X-Axis:</strong> Time Period
-          </div>
-          <div>
-            <strong>Y-Axis:</strong> Metric Value
-          </div>
-          <div>
-            <strong>Series:</strong> {String(point.seriesId)}
-          </div>
         </div>
       </div>
     </div>

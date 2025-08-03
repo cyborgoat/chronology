@@ -2,7 +2,7 @@ import type { ChartData, MetricType, Project, ProjectMetric } from "../../types"
 import { isValidTimestamp, formatTimestampForChart } from "./ChartConfig";
 
 export interface ChartDataGeneratorProps {
-  selectedProject: Project;
+  selectedProject: Project | null;
   chartViewMode: "metric-wise" | "model-wise";
   selectedMetrics: MetricType[];
   selectedModels: string[];
@@ -37,18 +37,6 @@ function hasMetricValue(record: ProjectMetric, metricId: MetricType): boolean {
   return getMetricValue(record, metricId) !== undefined;
 }
 
-export interface ChartDataGeneratorProps {
-  selectedProject: Project;
-  chartViewMode: "metric-wise" | "model-wise";
-  selectedMetrics: MetricType[];
-  selectedModels: string[];
-  selectedMetricForComparison: MetricType | null;
-  availableModels: string[];
-  getMetricLabel: (metric: MetricType) => string;
-  getMetricColor: (metric: MetricType) => string;
-  modelColors: Record<string, string>;
-}
-
 export function generateChartData({
   selectedProject,
   chartViewMode,
@@ -61,6 +49,12 @@ export function generateChartData({
   modelColors,
 }: ChartDataGeneratorProps): ChartData[] {
   let chartData: ChartData[] = [];
+
+  // Early return if no project is selected
+  if (!selectedProject) {
+    console.log('ChartDataGenerator: No project selected');
+    return chartData;
+  }
 
   // Debug logging
   console.log('ChartDataGenerator Debug:', {
