@@ -1,16 +1,15 @@
 import { useEffect, useMemo } from "react";
 import { useProjects } from "../contexts/useProjectContext";
-import { metricColors, metricLabels, modelColors } from "../data/sampleData";
+import { modelColors } from "../data/sampleData";
 import type {
   ChartData,
   MetricType,
   ChartViewMode,
-  MetricLabels,
-  MetricColors,
   ProjectMetric,
   Project,
 } from "../types";
 import { generateChartData, NivoLineChart } from "./chart";
+import { getMetricValue, hasMetricValue, getMetricLabel, getMetricColor, getEnabledMetrics } from "../lib";
 import {
   Card,
   CardContent,
@@ -20,44 +19,6 @@ import {
 } from "@/components/ui/card";
 
 // No props interface needed
-
-// ============================================================================
-// UTILITY FUNCTIONS
-// ============================================================================
-
-/**
- * Gets metric value from a record, handling both direct properties and additionalMetrics
- */
-function getMetricValue(
-  record: ProjectMetric,
-  metricId: MetricType
-): number | undefined {
-  // First check if it's a direct property
-  const directValue = record[metricId as keyof ProjectMetric];
-  if (typeof directValue === "number") {
-    return directValue;
-  }
-
-  // Then check in additionalMetrics
-  if (
-    record.additionalMetrics &&
-    typeof record.additionalMetrics === "object"
-  ) {
-    const additionalValue = record.additionalMetrics[metricId];
-    if (typeof additionalValue === "number") {
-      return additionalValue;
-    }
-  }
-
-  return undefined;
-}
-
-/**
- * Checks if a metric has a value in a record
- */
-function hasMetricValue(record: ProjectMetric, metricId: MetricType): boolean {
-  return getMetricValue(record, metricId) !== undefined;
-}
 
 // ============================================================================
 // CUSTOM HOOKS
@@ -82,13 +43,8 @@ function useChartSelections() {
 
   // Get enabled metrics from project's metrics configuration
   const enabledMetrics: MetricType[] = useMemo(
-    () =>
-      selectedProject?.metricsConfig
-        ? selectedProject.metricsConfig
-            .filter((metric) => metric.enabled)
-            .map((metric) => metric.id as MetricType)
-        : [],
-    [selectedProject?.metricsConfig]
+    () => getEnabledMetrics(selectedProject),
+    [selectedProject]
   );
 
   const availableModels = selectedProject
@@ -142,28 +98,16 @@ function useChartSelections() {
  */
 function useMetricDisplay(selectedProject: Project | null) {
   // Helper function to get metric label (from config or fallback to default)
-  const getMetricLabel = (metricId: MetricType): string => {
-    if (selectedProject?.metricsConfig) {
-      const metricConfig = selectedProject.metricsConfig.find(
-        (m) => m.id === metricId
-      );
-      if (metricConfig?.name) return metricConfig.name;
-    }
-    return (metricLabels as MetricLabels)[metricId] || metricId;
+  const getMetricLabelLocal = (metricId: MetricType): string => {
+    return getMetricLabel(metricId, selectedProject);
   };
 
   // Helper function to get metric color (from config or fallback to default)
-  const getMetricColor = (metricId: MetricType): string => {
-    if (selectedProject?.metricsConfig) {
-      const metricConfig = selectedProject.metricsConfig.find(
-        (m) => m.id === metricId
-      );
-      if (metricConfig?.color) return metricConfig.color;
-    }
-    return (metricColors as MetricColors)[metricId] || "hsl(200, 70%, 50%)";
+  const getMetricColorLocal = (metricId: MetricType): string => {
+    return getMetricColor(metricId, selectedProject);
   };
 
-  return { getMetricLabel, getMetricColor };
+  return { getMetricLabel: getMetricLabelLocal, getMetricColor: getMetricColorLocal };
 }
 
 /**

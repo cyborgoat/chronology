@@ -56,7 +56,7 @@ function AppContent() {
 
         {/* Project Stats */}
         <div className="flex justify-center">
-          <div className="w-full max-w-2xl">
+          <div className="w-full max-w-7xl">
             <ProjectStats />
           </div>
         </div>

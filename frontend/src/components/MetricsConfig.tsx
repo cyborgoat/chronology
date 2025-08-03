@@ -3,6 +3,7 @@ import { Plus, X, RotateCcw, Pencil } from 'lucide-react';
 import { useProjects } from '../contexts/useProjectContext';
 import { getDefaultMetricsConfig, MetricSettingsService } from '../services/api';
 import type { MetricSettings, MetricValueType, MetricType } from '../types';
+import { isDefaultMetric } from '../lib';
 import {
   Card,
   CardContent,
@@ -40,10 +41,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-// Helper function to check if a metric is a default metric
-const isDefaultMetric = (metricId: string) => {
-  return ['accuracy', 'loss', 'precision', 'recall', 'f1Score'].includes(metricId);
-};
+
 
 export function MetricsConfig() {
   const { 
