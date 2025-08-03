@@ -13,7 +13,6 @@ from datetime import datetime
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from .models import ProjectDB, ProjectMetricDB, MetricSettingsDB, Project, ProjectMetric, MetricSettings
-from .database import get_db
 
 # Database operations for projects
 def create_project(db: Session, project_data: dict) -> ProjectDB:

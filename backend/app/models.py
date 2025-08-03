@@ -8,7 +8,7 @@ This module contains:
 """
 
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any, Union
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 from sqlalchemy import Column, String, DateTime, Float, Text, Boolean, Integer, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base

@@ -23,8 +23,7 @@ from .models import (
 from .storage import (
     create_project, get_all_projects, get_project_by_id, update_project, delete_project,
     create_metric, get_project_metrics, get_metric_by_id, update_metric, delete_metric,
-    update_project_metric_settings, db_project_to_pydantic, pydantic_project_to_db,
-    pydantic_metric_to_db, pydantic_setting_to_db
+    update_project_metric_settings, db_project_to_pydantic, pydantic_setting_to_db
 )
 from .database import get_db
 
@@ -307,8 +306,7 @@ def create_metric_definition(project_id: str, metric_data: CreateMetricRequest, 
     
     # Create the metric setting
     from .storage import create_metric_settings
-    db_setting = create_metric_settings(db, setting_data)
-    
+    create_metric_settings(db, setting_data)
     return {"message": "Metric definition created successfully", "metricId": metric_data.metricId}
 
 @router.delete("/projects/{project_id}/metrics-definitions/{metric_id}")

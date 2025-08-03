@@ -1,6 +1,3 @@
-import json
-from datetime import datetime
-from sqlalchemy.orm import Session
 from .database import SessionLocal, create_tables
 from .storage import (
     create_project, create_metric, create_metric_settings,
