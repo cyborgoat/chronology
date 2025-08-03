@@ -13,6 +13,7 @@ export const CHART_CONFIG = {
     useUTC: false,
     min: "auto" as const,
     max: "auto" as const,
+    nice: true,
   },
   yScale: {
     type: "linear" as const,
