@@ -383,16 +383,6 @@ export function MetricsConfig() {
           </div>
           <div className="flex items-center gap-2">
             <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="sm" onClick={resetToDefaults}>
-                    <RotateCcw className="w-4 h-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <div className="text-xs">Reset to default metrics</div>
-                </TooltipContent>
-              </Tooltip>
               <Popover open={isPopoverOpen} onOpenChange={(open) => {
                 setIsPopoverOpen(open);
                 if (open) {
@@ -404,7 +394,8 @@ export function MetricsConfig() {
                   <TooltipTrigger asChild>
                     <PopoverTrigger asChild>
                       <Button size="sm">
-                        <Plus className="w-4 h-4" />
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add New Metric Type
                       </Button>
                     </PopoverTrigger>
                   </TooltipTrigger>
@@ -675,7 +666,10 @@ export function MetricsConfig() {
               <div className="space-y-4">
                 {/* Default Metrics Section */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">Default Metrics</h3>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-medium text-gray-700">Default Metrics</h3>
+                    <p className="text-xs text-muted-foreground">Click to deactivate (deactivated metrics will be not displayed in the table and saved values will not be deleted)</p>
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {metricsConfig
                       .filter(metric => isDefaultMetric(metric.id))
