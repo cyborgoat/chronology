@@ -3,7 +3,7 @@ import { Plus, X, RotateCcw, Pencil } from 'lucide-react';
 import { useProjects } from '../contexts/useProjectContext';
 import { getDefaultMetricsConfig, MetricSettingsService } from '../services/api';
 import type { MetricSettings, MetricValueType, MetricType } from '../types';
-import { isDefaultMetric } from '../lib';
+import { isDefaultMetric } from '../utils';
 import {
   Card,
   CardContent,

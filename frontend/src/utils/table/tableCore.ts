@@ -1,4 +1,4 @@
-import type { ProjectMetric, MetricType } from "../types";
+import type { ProjectMetric, MetricType } from "../../types";
 
 /**
  * Sorting configuration for table columns
@@ -180,4 +180,4 @@ export const tableStyles = {
   
   // Headers
   sortableHeader: "cursor-pointer hover:bg-slate-100 transition-colors select-none",
-};
+}; 

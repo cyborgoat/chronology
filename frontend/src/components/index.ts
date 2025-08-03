@@ -1,5 +1,6 @@
 export { TimelineChart } from './TimelineChart';
 export { DataTable } from './DataTable';
+export { DataTableContent } from './DataTableContent';
 export { ProjectSelector } from './ProjectSelector';
 export { MetricSelector } from './MetricSelector';
 export { ViewToggle } from './ViewToggle';

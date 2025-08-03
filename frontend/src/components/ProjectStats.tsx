@@ -1,6 +1,6 @@
 import { useProjects } from '../contexts/useProjectContext';
 import { TrendingUp, TrendingDown, BarChart, Calendar } from 'lucide-react';
-import { formatMetricValue, getLatestValue, getImprovement, formatPercent, sortRecordsByTimestamp, capitalizeFirst } from '../lib';
+import { formatMetricValue, getLatestValue, getImprovement, formatPercent, sortRecordsByTimestamp, capitalizeFirst } from '../utils';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 

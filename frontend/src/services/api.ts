@@ -1,6 +1,6 @@
 import type { Project, ProjectMetric, MetricSettings } from '../types';
 import { API_BASE_URL, API_ENDPOINTS, HTTP_METHODS, DEFAULT_HEADERS } from '../config/api';
-import { ApiErrorHandler } from '../utils/errorHandling';
+import { ApiErrorHandler } from '../utils/table/errorHandling';
 
 // Helper function to handle API responses
 const handleResponse = async <T>(response: Response): Promise<T> => {

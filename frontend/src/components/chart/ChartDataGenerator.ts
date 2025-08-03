@@ -1,6 +1,6 @@
 import type { ChartData, MetricType, Project, ProjectMetric } from "../../types";
 import { isValidTimestamp, formatTimestampForChart } from "./ChartConfig";
-import { getMetricValue, hasMetricValue } from "../../lib";
+import { getMetricValue, hasMetricValue } from "../../utils";
 
 export interface ChartDataGeneratorProps {
   selectedProject: Project | null;

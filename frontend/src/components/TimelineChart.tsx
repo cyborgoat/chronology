@@ -9,7 +9,7 @@ import type {
   Project,
 } from "../types";
 import { generateChartData, NivoLineChart } from "./chart";
-import { getMetricValue, hasMetricValue, getMetricLabel, getMetricColor, getEnabledMetrics } from "../lib";
+import { getMetricValue, hasMetricValue, getMetricLabel, getMetricColor, getEnabledMetrics } from "../utils";
 import {
   Card,
   CardContent,
