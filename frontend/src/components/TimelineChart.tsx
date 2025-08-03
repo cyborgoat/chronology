@@ -1,4 +1,6 @@
-import { } from "react";
+import { useRef } from "react";
+import { toPng, toSvg } from "html-to-image";
+import download from "downloadjs";
 import type {
   ChartData,
   MetricType,
@@ -18,6 +20,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Download, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // ============================================================================
 // CUSTOM HOOKS
@@ -103,6 +113,8 @@ function useChartData(
 // ============================================================================
 
 export function TimelineChart() {
+  const chartRef = useRef<HTMLDivElement>(null);
+
   // Use custom hooks to manage state and logic
   const {
     selectedProject,
@@ -120,6 +132,25 @@ export function TimelineChart() {
     handleSelectAllModels,
     handleClearAllModels,
   } = useChartControls();
+
+  // Export chart as image
+  const exportChart = async (format: 'svg' | 'png') => {
+    if (!chartRef.current) return;
+
+    try {
+      const filename = `${selectedProject?.name || 'chart'}-timeline.${format}`;
+      
+      if (format === 'svg') {
+        const dataUrl = await toSvg(chartRef.current);
+        download(dataUrl, filename);
+      } else {
+        const dataUrl = await toPng(chartRef.current);
+        download(dataUrl, filename);
+      }
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
+  };
 
   const { getMetricLabel, getMetricColor } = useMetricDisplay(selectedProject);
 
@@ -163,12 +194,21 @@ export function TimelineChart() {
     }
   };
 
+  // Debug logging
+  console.log('TimelineChart render:', {
+    selectedProject: selectedProject?.name,
+    chartDataLength: chartData.length,
+    chartData: chartData,
+    hasValidData: hasValidData(),
+    shouldShowEmptyState: shouldShowEmptyState()
+  });
+
   // Early return if no project selected
   if (!selectedProject) {
     return (
       <Card>
-        <CardContent className="flex items-center justify-center h-96">
-          <p className="text-muted-foreground text-lg">
+        <CardContent className="flex justify-center items-center h-96">
+          <p className="text-lg text-muted-foreground">
             Select a project to view its timeline
           </p>
         </CardContent>
@@ -185,14 +225,37 @@ export function TimelineChart() {
             <CardTitle>{getTitle()}</CardTitle>
             <CardDescription>
               {chartViewMode === "metric-wise"
-                ? "Track your AI model metrics over time"
+                ? "Track metrics over time"
                 : "Compare different AI models performance"}
             </CardDescription>
           </div>
+          
+          {/* Export dropdown menu */}
+          {!shouldShowEmptyState() && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="flex gap-2 items-center">
+                  <Download className="w-4 h-4" />
+                  Export Chart
+                  <ChevronDown className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={async () => await exportChart('svg')}>
+                  <Download className="mr-2 w-4 h-4" />
+                  Export as SVG
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={async () => await exportChart('png')}>
+                  <Download className="mr-2 w-4 h-4" />
+                  Export as PNG
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         {/* Controls */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
+        <div className="pt-6 mt-6 border-t border-gray-200">
           <ViewModeToggle
             chartViewMode={chartViewMode}
             onViewModeChange={handleViewModeChange}
@@ -230,20 +293,22 @@ export function TimelineChart() {
             chartViewMode={chartViewMode}
           />
         ) : (
-          <div className="h-96">
-            <NivoLineChart
-              chartData={chartData}
-              selectedProject={selectedProject}
-              chartViewMode={chartViewMode}
-              selectedMetrics={selectedMetrics}
-              selectedMetricForComparison={selectedMetricForComparison}
-              getMetricLabel={getMetricLabel}
-              currentModelName={
-                chartViewMode === "metric-wise" && selectedModels.length > 0
-                  ? selectedModels[0]
-                  : undefined
-              }
-            />
+          <div className="w-full h-96">
+            <div ref={chartRef} className="w-full h-full" style={{ minHeight: '384px' }}>
+              <NivoLineChart
+                chartData={chartData}
+                selectedProject={selectedProject}
+                chartViewMode={chartViewMode}
+                selectedMetrics={selectedMetrics}
+                selectedMetricForComparison={selectedMetricForComparison}
+                getMetricLabel={getMetricLabel}
+                currentModelName={
+                  chartViewMode === "metric-wise" && selectedModels.length > 0
+                    ? selectedModels[0]
+                    : undefined
+                }
+              />
+            </div>
           </div>
         )}
       </CardContent>
