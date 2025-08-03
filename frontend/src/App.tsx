@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ProjectProvider } from "./contexts/ProjectContext";
-import { Header } from "./components/Header";
+import { Footer } from "./components/Footer";
 import { ProjectInfo } from "./components/ProjectInfo";
 import { TimelineChart } from "./components/TimelineChart";
 import { DataTable } from "./components/DataTable";
@@ -29,9 +29,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24 space-y-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-32 space-y-8">
         {/* Project Information */}
         <ProjectInfo />
 
@@ -63,6 +61,8 @@ function AppContent() {
           </div>
         </div>
       </main>
+
+      <Footer />
 
       {/* Point Edit Modal - you could implement this for inline editing */}
       {editingPoint && (
