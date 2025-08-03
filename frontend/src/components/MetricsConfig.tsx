@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, X, RotateCcw, Pencil } from 'lucide-react';
+import { Plus, X, Pencil } from 'lucide-react';
 import { useProjects } from '../contexts/useProjectContext';
 import { getDefaultMetricsConfig, MetricSettingsService } from '../services/api';
 import type { MetricSettings, MetricValueType, MetricType } from '../types';
-import { isDefaultMetric } from '../utils';
+import { isDefaultMetric } from '../utils/metricUtils';
 import {
   Card,
   CardContent,
@@ -346,18 +346,7 @@ export function MetricsConfig() {
     }
   };
 
-  const resetToDefaults = () => {
-    const defaultMetrics = getDefaultMetricsConfig();
-    setMetricsConfig(defaultMetrics);
-    
-    // Sync with TimelineChart immediately after reset
-    const allDefaultMetrics = defaultMetrics.map(m => m.id as MetricType);
-    if (chartViewMode === 'metric-wise') {
-      setSelectedMetrics(allDefaultMetrics);
-    } else {
-      setSelectedMetricForComparison(allDefaultMetrics[0] || null);
-    }
-  };
+
 
   if (!selectedProject) {
     return (
@@ -656,19 +645,21 @@ export function MetricsConfig() {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-6">
         {errorMessage && !isPopoverOpen && (
-          <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
+          <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
             {errorMessage}
           </div>
         )}
-            <TooltipProvider>
-              <div className="space-y-4">
+        <TooltipProvider>
+          <div className="space-y-6">
                 {/* Default Metrics Section */}
                 <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-medium text-gray-700">Default Metrics</h3>
-                    <p className="text-xs text-muted-foreground">Click to deactivate (deactivated metrics will be not displayed in the table and saved values will not be deleted)</p>
+                  <div className="mb-4">
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">Default Metrics</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Click to deactivate (deactivated metrics will not be displayed in the table and saved values will not be deleted)
+                    </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {metricsConfig
@@ -712,9 +703,14 @@ export function MetricsConfig() {
                 {/* Custom Metrics Section */}
                 {metricsConfig.some(metric => !isDefaultMetric(metric.id)) && (
                   <>
-                    <div className="border-t border-gray-200"></div>
+                    <div className="border-t border-gray-200 my-4"></div>
                     <div>
-                      <h3 className="text-sm font-medium text-gray-700 mb-3">Custom Metrics</h3>
+                      <div className="mb-4">
+                        <h3 className="text-sm font-medium text-gray-700 mb-2">Custom Metrics</h3>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Click to deactivate • Delete to remove permanently (deleted metrics will permanently remove all related data values)
+                        </p>
+                      </div>
                       <div className="flex flex-wrap gap-2">
                         {metricsConfig
                           .filter(metric => !isDefaultMetric(metric.id))
@@ -757,7 +753,7 @@ export function MetricsConfig() {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => editMetric(metric)}
-                                    className="h-6 w-6 p-0 hover:bg-blue-50 hover:text-blue-600 rounded-full"
+                                    className="h-6 w-6 p-0 hover:bg-blue-50 hover:text-blue-600 rounded-full transition-colors"
                                   >
                                     <Pencil className="w-3 h-3" />
                                   </Button>
@@ -772,13 +768,13 @@ export function MetricsConfig() {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => deleteCustomMetric(metric.id)}
-                                    className="h-6 w-6 p-0 hover:bg-red-50 hover:text-red-600 rounded-full"
+                                    className="h-6 w-6 p-0 hover:bg-red-50 hover:text-red-600 rounded-full transition-colors"
                                   >
                                     <X className="w-3 h-3" />
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <div className="text-xs">Delete custom metric</div>
+                                  <div className="text-xs">Delete custom metric (will remove all related data)</div>
                                 </TooltipContent>
                               </Tooltip>
                             </div>
