@@ -1,7 +1,7 @@
 // Chart configuration constants and utilities
 export const CHART_CONFIG = {
   margins: { top: 50, right: 140, bottom: 80, left: 60 },
-  pointSize: 8,
+  pointSize: 4,
   pointBorderWidth: 2,
   animation: {
     animate: true,

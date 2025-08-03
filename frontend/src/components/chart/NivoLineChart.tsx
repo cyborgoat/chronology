@@ -59,11 +59,12 @@ export function NivoLineChart({
       axisBottom={CHART_CONFIG.axisBottom}
       axisLeft={CHART_CONFIG.axisLeft}
       pointSize={CHART_CONFIG.pointSize}
-      pointColor={{ theme: "background" }}
+      pointColor="transparent"
       pointBorderWidth={CHART_CONFIG.pointBorderWidth}
-      pointBorderColor={{ from: "serieColor" }}
+      pointBorderColor="rgba(128, 128, 128, 0.6)"
       pointLabelYOffset={-12}
       enablePointLabel={false}
+      enablePoints={true}
       useMesh={true}
       onClick={handlePointClick}
       enableCrosshair={true}
