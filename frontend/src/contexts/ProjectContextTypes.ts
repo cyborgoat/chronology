@@ -26,8 +26,8 @@ export interface ProjectContextType {
   setSelectedProjectIds: (ids: string[]) => void;
   setSelectedModels: (models: string[]) => void;
   addMetricRecord: (projectId: string, metric: Omit<ProjectMetric, 'id'>) => Promise<void>;
-  updateMetric: (projectId: string, metricId: string, updates: Partial<ProjectMetric>) => Promise<void>;
-  deleteMetric: (projectId: string, metricId: string) => Promise<void>;
+  updateMetricRecord: (projectId: string, metricId: string, updates: Partial<ProjectMetric>) => Promise<void>;
+  deleteMetricRecord: (projectId: string, metricId: string) => Promise<void>;
   setSelectedMetrics: (metrics: MetricType[]) => void;
   setChartViewMode: (mode: ChartViewMode) => void;
   setSelectedMetricForComparison: (metric: MetricType | null) => void;

@@ -25,7 +25,12 @@ export function NivoLineChart({
   const handlePointClick = (point: unknown) => {
     if (onPointClick) {
       // Convert Nivo point to our ChartPoint format
-      const nivoPoint = point as { id: string; data: { x: string | Date; y: number }; seriesId: string; seriesColor: string };
+      const nivoPoint = point as {
+        id: string;
+        data: { x: string | Date; y: number };
+        seriesId: string;
+        seriesColor: string;
+      };
       const chartPoint: ChartPoint = {
         id: nivoPoint.id,
         x: nivoPoint.data.x,

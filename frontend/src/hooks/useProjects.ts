@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ProjectsApi, MetricsApi, getDefaultMetricsConfig } from '../services/api';
+import { ProjectService, MetricRecordService, MetricSettingsService, getDefaultMetricsConfig } from '../services/api';
 import type { Project, ProjectMetric, MetricSettings, MetricType, ChartViewMode } from '../types';
 
 interface UseProjectsReturn {
@@ -37,8 +37,8 @@ interface UseProjectsReturn {
   
   // Metric record operations
   addMetricRecord: (projectId: string, metric: Omit<ProjectMetric, 'id'>) => Promise<void>;
-  updateMetric: (projectId: string, metricId: string, updates: Partial<ProjectMetric>) => Promise<void>;
-  deleteMetric: (projectId: string, metricId: string) => Promise<void>;
+  updateMetricRecord: (projectId: string, metricId: string, updates: Partial<ProjectMetric>) => Promise<void>;
+  deleteMetricRecord: (projectId: string, metricId: string) => Promise<void>;
   
   // Utilities
   getAvailableModels: (projectId?: string) => string[];
@@ -76,7 +76,7 @@ export function useProjects(): UseProjectsReturn {
     try {
       setProjectsLoading(true);
       setLoading(true);
-      const projectsData = await ProjectsApi.getProjects();
+      const projectsData = await ProjectService.getProjects();
       
       // Ensure all projects have metrics config
       const projectsWithConfig = projectsData.map(project => ({
@@ -115,7 +115,7 @@ export function useProjects(): UseProjectsReturn {
           ? projectData.metricsConfig 
           : getDefaultMetricsConfig()
       };
-      const newProject = await ProjectsApi.createProject(projectWithConfig);
+      const newProject = await ProjectService.createProject(projectWithConfig);
       setProjects(prev => [...prev, newProject]);
     } catch (error) {
       console.error('Failed to add project:', error);
@@ -127,7 +127,7 @@ export function useProjects(): UseProjectsReturn {
   const updateProject = useCallback(async (id: string, updates: Partial<Project>) => {
     try {
       setProjectLoading(true);
-      const updatedProject = await ProjectsApi.updateProject(id, updates);
+      const updatedProject = await ProjectService.updateProject(id, updates);
       if (updatedProject) {
         setProjects(prev => prev.map(project => 
           project.id === id ? updatedProject : project
@@ -143,7 +143,7 @@ export function useProjects(): UseProjectsReturn {
   const deleteProject = useCallback(async (id: string) => {
     try {
       setProjectLoading(true);
-      const success = await ProjectsApi.deleteProject(id);
+      const success = await ProjectService.deleteProject(id);
       if (success) {
         setProjects(prev => prev.filter(project => project.id !== id));
         if (selectedProjectId === id) {
@@ -159,7 +159,7 @@ export function useProjects(): UseProjectsReturn {
 
   const updateProjectMetricsConfig = useCallback(async (projectId: string, metricsConfig: MetricSettings[]) => {
     try {
-      const success = await ProjectsApi.updateProjectMetricsConfig(projectId, metricsConfig);
+      const success = await MetricSettingsService.updateProjectMetricsConfig(projectId, metricsConfig);
       if (success) {
         // Update the local state directly instead of fetching the project again
         setProjects(prev => prev.map(project => 
@@ -177,10 +177,10 @@ export function useProjects(): UseProjectsReturn {
   const addMetricRecord = useCallback(async (projectId: string, metricData: Omit<ProjectMetric, 'id'>) => {
     try {
       setMetricsLoading(true);
-      const newMetric = await MetricsApi.addMetric(projectId, metricData);
+      const newMetric = await MetricRecordService.createMetricRecord(projectId, metricData);
       if (newMetric) {
         // Reload the specific project to get updated metric records
-        const updatedProject = await ProjectsApi.getProject(projectId);
+        const updatedProject = await ProjectService.getProject(projectId);
         if (updatedProject) {
           setProjects(prev => prev.map(project => 
             project.id === projectId ? updatedProject : project
@@ -194,13 +194,13 @@ export function useProjects(): UseProjectsReturn {
     }
   }, []);
 
-  const updateMetric = useCallback(async (projectId: string, metricId: string, updates: Partial<ProjectMetric>) => {
+  const updateMetricRecord = useCallback(async (projectId: string, metricId: string, updates: Partial<ProjectMetric>) => {
     try {
       setMetricsLoading(true);
-      const updatedMetric = await MetricsApi.updateMetric(projectId, metricId, updates);
+      const updatedMetric = await MetricRecordService.updateMetricRecord(projectId, metricId, updates);
       if (updatedMetric) {
         // Reload the specific project to get updated metric records
-        const updatedProject = await ProjectsApi.getProject(projectId);
+        const updatedProject = await ProjectService.getProject(projectId);
         if (updatedProject) {
           setProjects(prev => prev.map(project => 
             project.id === projectId ? updatedProject : project
@@ -214,13 +214,13 @@ export function useProjects(): UseProjectsReturn {
     }
   }, []);
 
-  const deleteMetric = useCallback(async (projectId: string, metricId: string) => {
+  const deleteMetricRecord = useCallback(async (projectId: string, metricId: string) => {
     try {
       setMetricsLoading(true);
-      const success = await MetricsApi.deleteMetric(projectId, metricId);
+      const success = await MetricRecordService.deleteMetricRecord(projectId, metricId);
       if (success) {
         // Reload the specific project to get updated metric records
-        const updatedProject = await ProjectsApi.getProject(projectId);
+        const updatedProject = await ProjectService.getProject(projectId);
         if (updatedProject) {
           setProjects(prev => prev.map(project => 
             project.id === projectId ? updatedProject : project
@@ -276,10 +276,10 @@ export function useProjects(): UseProjectsReturn {
     deleteProject,
     updateProjectMetricsConfig,
     
-    // Metric operations
+    // Metric record operations
     addMetricRecord,
-    updateMetric,
-    deleteMetric,
+    updateMetricRecord,
+    deleteMetricRecord,
     
     // Utilities
     getAvailableModels,

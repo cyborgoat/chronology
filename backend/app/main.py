@@ -3,17 +3,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from .routes import router as project_router
 from .database import create_tables
 from .seed_data import seed_database
+from .config import APP_NAME, APP_VERSION, CORS_ORIGINS
 
 app = FastAPI(
-    title="Chronology Backend", 
-    version="0.1.0",
+    title=APP_NAME, 
+    version=APP_VERSION,
     description="Backend service for Chronology, a timeline visualization app for AI projects."
 )
 
 # Allow CORS for local frontend dev
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -31,7 +32,7 @@ async def startup_event():
 
 @app.get("/")
 def root():
-    return {"message": "Chronology backend is running!"}
+    return {"message": f"{APP_NAME} is running!"}
 
 @app.get("/health")
 def health_check():

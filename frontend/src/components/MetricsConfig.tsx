@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Plus, X, RotateCcw, Pencil } from 'lucide-react';
 import { useProjects } from '../contexts/useProjectContext';
-import { getDefaultMetricsConfig, ProjectsApi } from '../services/api';
+import { getDefaultMetricsConfig, MetricSettingsService } from '../services/api';
 import type { MetricSettings, MetricValueType, MetricType } from '../types';
 import {
   Card,
@@ -224,7 +224,7 @@ export function MetricsConfig() {
       }
 
       try {
-        const success = await ProjectsApi.deleteMetricDefinition(selectedProject.id, metricId);
+        const success = await MetricSettingsService.deleteMetricDefinition(selectedProject.id, metricId);
         if (success) {
           setMetricsConfig(prev => prev.filter(metric => metric.id !== metricId));
         } else {

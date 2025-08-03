@@ -25,8 +25,8 @@ import {
 export function DataTable() {
   const {
     selectedProject,
-    updateMetric,
-    deleteMetric,
+    updateMetricRecord,
+    deleteMetricRecord,
     addMetricRecord,
     getAvailableModels,
   } = useProjects();
@@ -100,7 +100,7 @@ export function DataTable() {
         defaultMetricUpdates.additionalMetrics = customMetricsData;
       }
 
-      updateMetric(selectedProject.id, editingId, defaultMetricUpdates);
+      updateMetricRecord(selectedProject.id, editingId, defaultMetricUpdates);
       setEditingId(null);
       setEditValues({});
     }
@@ -116,7 +116,7 @@ export function DataTable() {
       selectedProject &&
       confirm("Are you sure you want to delete this data record?")
     ) {
-      deleteMetric(selectedProject.id, metricId);
+      deleteMetricRecord(selectedProject.id, metricId);
     }
   };
 
