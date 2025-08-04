@@ -1,22 +1,77 @@
-import { Plus, Save, X, Lock, Unlock, Edit2 } from "lucide-react";
+import { Plus, Save, X, Lock, Unlock, Edit2, Download, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { tableStyles } from "../../utils/table/tableCore";
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 interface TableToolbarProps {
   selectedProject: { name: string; records: Array<{ id: string }> };
   globalEditMode: boolean;
   onToggleEditMode: (pressed: boolean) => void;
   onShowAddForm: () => void;
+  exportData: () => Array<Record<string, unknown>>;
 }
 
 export function TableToolbar({
   selectedProject,
   globalEditMode,
   onToggleEditMode,
-  onShowAddForm
+  onShowAddForm,
+  exportData
 }: TableToolbarProps) {
+  const handleExport = (format: 'csv' | 'xlsx' | 'json') => {
+    const data = exportData();
+    const filename = `${selectedProject.name}-data.${format}`;
+    
+    // Debug logging
+    console.log('Exporting data:', {
+      format,
+      recordCount: data.length,
+      sampleRecord: data[0]
+    });
+    
+    if (format === 'json') {
+      const jsonData = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonData], { type: 'application/json' });
+      saveAs(blob, filename);
+    } else if (format === 'csv') {
+      // Convert to CSV
+      const headers = Object.keys(data[0] || {});
+      const csvContent = [
+        headers.join(','),
+        ...data.map(row => 
+          headers.map(header => {
+            const value = row[header];
+            // Escape commas and quotes in CSV
+            if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+              return `"${value.replace(/"/g, '""')}"`;
+            }
+            return value;
+          }).join(',')
+        )
+      ].join('\n');
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+      saveAs(blob, filename);
+    } else if (format === 'xlsx') {
+      // Convert to XLSX
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
+      const xlsxBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([xlsxBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      saveAs(blob, filename);
+    }
+  };
+
   return (
     <div className="flex justify-between items-center">
       <div>
@@ -52,6 +107,31 @@ export function TableToolbar({
           <Plus className="w-4 h-4 mr-2" />
           Add Record
         </Button>
+
+        {/* Export dropdown menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="flex gap-2 items-center">
+              <Download className="w-4 h-4" />
+              Export Data
+              <ChevronDown className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleExport('csv')}>
+              <Download className="mr-2 w-4 h-4" />
+              Export as CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport('xlsx')}>
+              <Download className="mr-2 w-4 h-4" />
+              Export as XLSX
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport('json')}>
+              <Download className="mr-2 w-4 h-4" />
+              Export as JSON
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

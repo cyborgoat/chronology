@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { ProjectMetric, MetricType } from "../types";
+import type { ProjectMetric, MetricType, Project } from "../types";
 import { 
   sortMetrics, 
   getAvailableMetrics, 
@@ -34,7 +34,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Save, X } from "lucide-react";
 
 interface DataTableContentProps {
-  selectedProject: { id: string; name: string; records: ProjectMetric[]; metricsConfig?: Array<{ id: string; enabled: boolean }> };
+  selectedProject: Project;
   updateMetricRecord: (projectId: string, metricId: string, updates: Partial<ProjectMetric>) => Promise<void>;
   deleteMetricRecord: (projectId: string, metricId: string) => Promise<void>;
   addMetricRecord: (projectId: string, metricData: Omit<ProjectMetric, "id">) => Promise<void>;
@@ -93,6 +93,54 @@ export function DataTableContent({
     }
   };
 
+  const exportData = (): Array<Record<string, unknown>> => {
+    // Get metric names mapping from metricsConfig
+    const metricNamesMap: Record<string, string> = {};
+    if (selectedProject?.metricsConfig) {
+      selectedProject.metricsConfig.forEach(metric => {
+        metricNamesMap[metric.id] = metric.name;
+      });
+    }
+    
+    // Transform the data for export
+    const exportedData = sortedMetrics.map(metric => {
+      const exportRow: Record<string, unknown> = {
+        timestamp: metric.timestamp,
+        modelName: metric.modelName,
+      };
+      
+      // Add default metrics
+      enabledDefaultMetrics.forEach(key => {
+        exportRow[key] = metric[key];
+      });
+      
+      // Add custom metrics from additionalMetrics field with metric names
+      enabledCustomMetrics.forEach(customId => {
+        const metricName = metricNamesMap[customId] || customId; // Fallback to ID if name not found
+        exportRow[metricName] = metric.additionalMetrics?.[customId] || null;
+      });
+      
+      return exportRow;
+    });
+
+    // Debug logging
+    console.log('Export data prepared:', {
+      recordCount: exportedData.length,
+      enabledDefaultMetrics,
+      enabledCustomMetrics,
+      metricNamesMap,
+      sampleRecord: exportedData[0],
+      customMetricsSample: exportedData[0] ? 
+        enabledCustomMetrics.map(id => ({ 
+          id, 
+          name: metricNamesMap[id] || id,
+          value: exportedData[0][metricNamesMap[id] || id]
+        })) : []
+    });
+
+    return exportedData;
+  };
+
   const hasPendingChanges = tableRenderUtils.hasPendingChanges(state);
   const pendingChangesSummary = tableRenderUtils.getPendingChangesSummary(state);
 
@@ -104,6 +152,7 @@ export function DataTableContent({
           globalEditMode={state.globalEditMode}
           onToggleEditMode={handlers.handleToggleGlobalEditMode}
           onShowAddForm={() => setShowAddForm(true)}
+          exportData={exportData}
         />
       </CardHeader>
       
