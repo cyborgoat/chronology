@@ -129,97 +129,6 @@ export function DataTableContent({
                 />
                 
                 <TableBody>
-                  {sortedMetrics.map((metric, index) => (
-                    <DataTableRow
-                      key={metric.id}
-                      metric={metric}
-                      index={index}
-                      sortedMetrics={sortedMetrics}
-                      enabledDefaultMetrics={enabledDefaultMetrics}
-                      enabledCustomMetrics={enabledCustomMetrics}
-                      availableModels={availableModels}
-                      state={state}
-                      handlers={handlers}
-                    />
-                  ))}
-
-                  {state.globalEditMode && state.globalAddRecords.map((addRecord, index) => (
-                    <TableRow key={`add-${index}`} className={tableStyles.globalAddRow}>
-                      <TableCell className="min-w-[120px]">
-                        <Input
-                          type="date"
-                          value={addRecord.timestamp?.split("T")[0] || ""}
-                          onChange={(e) => handlers.updateGlobalAddRecord(index, "timestamp", e.target.value)}
-                          className="text-sm h-8"
-                          placeholder="Select date"
-                        />
-                      </TableCell>
-                      <TableCell className="min-w-[150px]">
-                        <Input
-                          type="text"
-                          value={addRecord.modelName || ""}
-                          onChange={(e) => handlers.updateGlobalAddRecord(index, "modelName", e.target.value)}
-                          className="w-full text-sm h-8"
-                          placeholder="Model name"
-                          list={`available-models-global-add-${index}`}
-                        />
-                        <datalist id={`available-models-global-add-${index}`}>
-                          {availableModels.map((model) => (
-                            <option key={model} value={model} />
-                          ))}
-                        </datalist>
-                      </TableCell>
-                      {enabledDefaultMetrics.map((key) => (
-                        <TableCell key={key} className="min-w-[100px]">
-                          <Input
-                            type="number"
-                            min="0"
-                            max="1"
-                            step="0.001"
-                            value={String(addRecord[key] || "")}
-                            onChange={(e) => {
-                              const inputValue = e.target.value;
-                              if (inputValue === "" || inputValue === "0") {
-                                handlers.updateGlobalAddRecord(index, key, inputValue);
-                              } else {
-                                const numValue = parseFloat(inputValue);
-                                handlers.updateGlobalAddRecord(index, key, isNaN(numValue) ? inputValue : numValue);
-                              }
-                            }}
-                            className="w-full text-sm h-8"
-                            placeholder="0.000"
-                          />
-                        </TableCell>
-                      ))}
-                      {enabledCustomMetrics.map((customId) => (
-                        <TableCell key={customId} className="min-w-[100px]">
-                          <Input
-                            type="number"
-                            step="0.001"
-                            value={String((addRecord as Record<string, unknown>)[customId] || "")}
-                            onChange={(e) => {
-                              const inputValue = e.target.value;
-                              if (inputValue === "" || inputValue === "0") {
-                                handlers.updateGlobalAddRecord(index, customId, inputValue);
-                              } else {
-                                const numValue = parseFloat(inputValue);
-                                handlers.updateGlobalAddRecord(index, customId, isNaN(numValue) ? inputValue : numValue);
-                              }
-                            }}
-                            className="w-full text-sm h-8"
-                            placeholder="0.000"
-                          />
-                        </TableCell>
-                      ))}
-                      <TableCell className="min-w-[120px]">
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground h-8">
-                          <Plus className="w-3 h-3" />
-                          <span>New Record {index + 1}</span>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-
                   {showAddForm && !state.globalEditMode && (
                     <TableRow className={tableStyles.addFormRow}>
                       <TableCell className="min-w-[120px]">
@@ -327,6 +236,97 @@ export function DataTableContent({
                       </TableCell>
                     </TableRow>
                   )}
+
+                  {sortedMetrics.map((metric, index) => (
+                    <DataTableRow
+                      key={metric.id}
+                      metric={metric}
+                      index={index}
+                      sortedMetrics={sortedMetrics}
+                      enabledDefaultMetrics={enabledDefaultMetrics}
+                      enabledCustomMetrics={enabledCustomMetrics}
+                      availableModels={availableModels}
+                      state={state}
+                      handlers={handlers}
+                    />
+                  ))}
+
+                  {state.globalEditMode && state.globalAddRecords.map((addRecord, index) => (
+                    <TableRow key={`add-${index}`} className={tableStyles.globalAddRow}>
+                      <TableCell className="min-w-[120px]">
+                        <Input
+                          type="date"
+                          value={addRecord.timestamp?.split("T")[0] || ""}
+                          onChange={(e) => handlers.updateGlobalAddRecord(index, "timestamp", e.target.value)}
+                          className="text-sm h-8"
+                          placeholder="Select date"
+                        />
+                      </TableCell>
+                      <TableCell className="min-w-[150px]">
+                        <Input
+                          type="text"
+                          value={addRecord.modelName || ""}
+                          onChange={(e) => handlers.updateGlobalAddRecord(index, "modelName", e.target.value)}
+                          className="w-full text-sm h-8"
+                          placeholder="Model name"
+                          list={`available-models-global-add-${index}`}
+                        />
+                        <datalist id={`available-models-global-add-${index}`}>
+                          {availableModels.map((model) => (
+                            <option key={model} value={model} />
+                          ))}
+                        </datalist>
+                      </TableCell>
+                      {enabledDefaultMetrics.map((key) => (
+                        <TableCell key={key} className="min-w-[100px]">
+                          <Input
+                            type="number"
+                            min="0"
+                            max="1"
+                            step="0.001"
+                            value={String(addRecord[key] || "")}
+                            onChange={(e) => {
+                              const inputValue = e.target.value;
+                              if (inputValue === "" || inputValue === "0") {
+                                handlers.updateGlobalAddRecord(index, key, inputValue);
+                              } else {
+                                const numValue = parseFloat(inputValue);
+                                handlers.updateGlobalAddRecord(index, key, isNaN(numValue) ? inputValue : numValue);
+                              }
+                            }}
+                            className="w-full text-sm h-8"
+                            placeholder="0.000"
+                          />
+                        </TableCell>
+                      ))}
+                      {enabledCustomMetrics.map((customId) => (
+                        <TableCell key={customId} className="min-w-[100px]">
+                          <Input
+                            type="number"
+                            step="0.001"
+                            value={String((addRecord as Record<string, unknown>)[customId] || "")}
+                            onChange={(e) => {
+                              const inputValue = e.target.value;
+                              if (inputValue === "" || inputValue === "0") {
+                                handlers.updateGlobalAddRecord(index, customId, inputValue);
+                              } else {
+                                const numValue = parseFloat(inputValue);
+                                handlers.updateGlobalAddRecord(index, customId, isNaN(numValue) ? inputValue : numValue);
+                              }
+                            }}
+                            className="w-full text-sm h-8"
+                            placeholder="0.000"
+                          />
+                        </TableCell>
+                      ))}
+                      <TableCell className="min-w-[120px]">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground h-8">
+                          <Plus className="w-3 h-3" />
+                          <span>New Record {index + 1}</span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>
