@@ -30,11 +30,6 @@ export function MetricSelector({
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-sm font-medium">
-          {chartViewMode === "metric-wise" ? "Metrics:" : "Compare Metric:"}
-        </span>
-      </div>
       <div className="flex flex-wrap gap-2">
         {enabledMetrics.length === 0 ? (
           <p className="text-xs text-muted-foreground">
@@ -90,4 +85,4 @@ export function MetricSelector({
       )}
     </div>
   );
-} 
+}

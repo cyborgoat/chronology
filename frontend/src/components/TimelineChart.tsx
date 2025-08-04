@@ -253,64 +253,80 @@ export function TimelineChart() {
             </DropdownMenu>
           )}
         </div>
+      </CardHeader>
 
-        {/* Controls */}
-        <div className="pt-6 mt-6 border-t border-gray-200">
+      <CardContent className="space-y-6">
+        {/* Chart View Mode Section */}
+        <div>
+          <div className="mb-4">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Chart View Mode</h3>
+          </div>
           <ViewModeToggle
             chartViewMode={chartViewMode}
             onViewModeChange={handleViewModeChange}
           />
-
-          <div className="space-y-6">
-            <MetricSelector
-              enabledMetrics={enabledMetrics}
-              selectedMetrics={selectedMetrics}
-              selectedMetricForComparison={selectedMetricForComparison}
-              chartViewMode={chartViewMode}
-              getMetricLabel={getMetricLabel}
-              getMetricColor={getMetricColor}
-              onMetricToggle={handleMetricToggle}
-              onSelectAll={handleSelectAllMetrics}
-              onClearAll={handleClearAllMetrics}
-            />
-
-            <ModelSelector
-              availableModels={availableModels}
-              selectedModels={selectedModels}
-              chartViewMode={chartViewMode}
-              onModelToggle={handleModelToggle}
-              onSelectAll={handleSelectAllModels}
-              onClearAll={handleClearAllModels}
-            />
-          </div>
         </div>
-      </CardHeader>
 
-      <CardContent>
-        {shouldShowEmptyState() ? (
-          <EmptyState
-            enabledMetrics={enabledMetrics}
-            chartViewMode={chartViewMode}
-          />
-        ) : (
-          <div className="w-full h-96">
-            <div ref={chartRef} className="w-full h-full" style={{ minHeight: '384px' }}>
-              <NivoLineChart
-                chartData={chartData}
-                selectedProject={selectedProject}
-                chartViewMode={chartViewMode}
-                selectedMetrics={selectedMetrics}
-                selectedMetricForComparison={selectedMetricForComparison}
-                getMetricLabel={getMetricLabel}
-                currentModelName={
-                  chartViewMode === "metric-wise" && selectedModels.length > 0
-                    ? selectedModels[0]
-                    : undefined
-                }
-              />
-            </div>
+        {/* Metrics Selection Section */}
+        <div>
+          <div className="mb-4">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Metrics Selection</h3>
           </div>
-        )}
+          <MetricSelector
+            enabledMetrics={enabledMetrics}
+            selectedMetrics={selectedMetrics}
+            selectedMetricForComparison={selectedMetricForComparison}
+            chartViewMode={chartViewMode}
+            getMetricLabel={getMetricLabel}
+            getMetricColor={getMetricColor}
+            onMetricToggle={handleMetricToggle}
+            onSelectAll={handleSelectAllMetrics}
+            onClearAll={handleClearAllMetrics}
+          />
+        </div>
+
+        {/* Models Selection Section */}
+        <div>
+          <div className="mb-4">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Models Selection</h3>
+          </div>
+          <ModelSelector
+            availableModels={availableModels}
+            selectedModels={selectedModels}
+            chartViewMode={chartViewMode}
+            onModelToggle={handleModelToggle}
+            onSelectAll={handleSelectAllModels}
+            onClearAll={handleClearAllModels}
+          />
+        </div>
+
+        {/* Chart Display Section */}
+        <div className="pt-6 mt-6 border-t border-gray-200">
+          {shouldShowEmptyState() ? (
+            <EmptyState
+              enabledMetrics={enabledMetrics}
+              chartViewMode={chartViewMode}
+            />
+          ) : (
+            <div className="w-full h-96">
+              <div ref={chartRef} className="w-full h-full" style={{ minHeight: '384px' }}>
+                <NivoLineChart
+                  chartData={chartData}
+                  selectedProject={selectedProject}
+                  chartViewMode={chartViewMode}
+                  selectedMetrics={selectedMetrics}
+                  selectedMetricForComparison={selectedMetricForComparison}
+                  getMetricLabel={getMetricLabel}
+                  currentModelName={
+                    chartViewMode === "metric-wise" && selectedModels.length > 0
+                      ? selectedModels[0]
+                      : undefined
+                  }
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

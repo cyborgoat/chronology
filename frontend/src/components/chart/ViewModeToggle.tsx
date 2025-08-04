@@ -11,7 +11,6 @@ export function ViewModeToggle({
 }: ViewModeToggleProps) {
   return (
     <div className="flex items-center gap-4 mb-4">
-      <span className="text-sm font-medium">View Mode:</span>
       <div className="flex gap-2">
         <button
           onClick={() => onViewModeChange("metric-wise")}
@@ -36,4 +35,4 @@ export function ViewModeToggle({
       </div>
     </div>
   );
-} 
+}

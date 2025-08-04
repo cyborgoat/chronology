@@ -30,13 +30,6 @@ export function ModelSelector({
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-sm font-medium">
-          {chartViewMode === "metric-wise"
-            ? "Filter by Models (optional):"
-            : "Models to Compare:"}
-        </span>
-      </div>
       <div className="flex flex-wrap gap-2">
         {chartViewMode === "model-wise" && (
           <button
@@ -84,4 +77,4 @@ export function ModelSelector({
       )}
     </div>
   );
-} 
+}
