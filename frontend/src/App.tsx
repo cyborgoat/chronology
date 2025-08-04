@@ -35,7 +35,7 @@ function AppContent() {
 
         {/* View Toggle */}
         <div className="flex justify-center">
-          <div className="w-80">
+          <div className="max-w-7xl">
             <ViewToggle
               currentView={currentView}
               onViewChange={setCurrentView}
