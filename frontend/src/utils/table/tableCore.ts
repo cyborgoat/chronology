@@ -31,8 +31,8 @@ export function sortMetrics(
   const { key, direction } = sortConfig;
   
   return sortedMetrics.sort((a, b) => {
-    let aValue: any;
-    let bValue: any;
+    let aValue: string | number;
+    let bValue: string | number;
 
     if (key === 'timestamp') {
       aValue = new Date(a.timestamp).getTime();
@@ -40,6 +40,9 @@ export function sortMetrics(
     } else if (key === 'modelName') {
       aValue = a.modelName || '';
       bValue = b.modelName || '';
+    } else if (key === 'modelVersion') {
+      aValue = a.modelVersion || '';
+      bValue = b.modelVersion || '';
     } else if (enabledDefaultMetrics.includes(key as MetricType)) {
       aValue = a[key as keyof ProjectMetric] || 0;
       bValue = b[key as keyof ProjectMetric] || 0;
@@ -140,6 +143,7 @@ export function createInitialRecord(): Partial<ProjectMetric> {
   return {
     timestamp: new Date().toISOString().split("T")[0],
     modelName: "",
+    modelVersion: "",
   };
 }
 

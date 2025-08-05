@@ -107,6 +107,7 @@ export function DataTableContent({
       const exportRow: Record<string, unknown> = {
         timestamp: metric.timestamp,
         modelName: metric.modelName,
+        modelVersion: metric.modelVersion || null,
       };
       
       // Add default metrics
@@ -214,6 +215,20 @@ export function DataTableContent({
                             <option key={model} value={model} />
                           ))}
                         </datalist>
+                      </TableCell>
+                      <TableCell className="min-w-[150px]">
+                        <Input
+                          type="text"
+                          value={newMetricRecord.modelVersion || ""}
+                          onChange={(e) =>
+                            setNewMetricRecord((prev) => ({
+                              ...prev,
+                              modelVersion: e.target.value,
+                            }))
+                          }
+                          className="w-full text-sm h-8"
+                          placeholder="Model version"
+                        />
                       </TableCell>
                       {enabledDefaultMetrics.map((key) => (
                         <TableCell key={key} className="min-w-[100px]">
@@ -325,6 +340,15 @@ export function DataTableContent({
                             <option key={model} value={model} />
                           ))}
                         </datalist>
+                      </TableCell>
+                      <TableCell className="min-w-[150px]">
+                        <Input
+                          type="text"
+                          value={addRecord.modelVersion || ""}
+                          onChange={(e) => handlers.updateGlobalAddRecord(index, "modelVersion", e.target.value)}
+                          className="w-full text-sm h-8"
+                          placeholder="Model version"
+                        />
                       </TableCell>
                       {enabledDefaultMetrics.map((key) => (
                         <TableCell key={key} className="min-w-[100px]">

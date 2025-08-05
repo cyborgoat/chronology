@@ -55,6 +55,7 @@ export function generateChartData({
       const data = filteredRecords.map((m) => ({
         x: formatTimestampForChart(m.timestamp),
         y: getMetricValue(m, metric) as number,
+        modelVersion: m.modelVersion || undefined,
       }));
 
       return {
@@ -78,6 +79,7 @@ export function generateChartData({
       const data = filteredRecords.map((m) => ({
         x: formatTimestampForChart(m.timestamp),
         y: getMetricValue(m, selectedMetricForComparison) as number,
+        modelVersion: m.modelVersion || undefined,
       }));
 
       return {

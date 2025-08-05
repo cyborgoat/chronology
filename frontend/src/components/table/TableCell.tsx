@@ -1,5 +1,4 @@
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import type { ProjectMetric } from "../../types";
 import { tableValidationUtils, TABLE_CONSTANTS } from "../../utils/table/tableUtils";
 
@@ -17,7 +16,7 @@ interface TableCellProps {
   step?: number;
   datalistId?: string;
   datalistOptions?: string[];
-  onValueChange: (value: any) => void;
+  onValueChange: (value: string | number | undefined) => void;
   displayValue?: string;
   displayComponent?: React.ReactNode;
 }
@@ -83,7 +82,7 @@ interface DateCellProps {
   isGlobalEdit: boolean;
   isMarkedForDeletion: boolean;
   value: string;
-  onValueChange: (value: string) => void;
+  onValueChange: (value: string | number | undefined) => void;
 }
 
 export function DateCell({
@@ -127,7 +126,7 @@ interface ModelCellProps {
   isGlobalEdit: boolean;
   isMarkedForDeletion: boolean;
   value: string;
-  onValueChange: (value: string) => void;
+  onValueChange: (value: string | number | undefined) => void;
   datalistId: string;
   datalistOptions: string[];
 }
@@ -155,11 +154,7 @@ export function ModelCell({
         placeholder="Model name"
         datalistId={datalistId}
         onValueChange={onValueChange}
-        displayComponent={
-          <Badge variant="secondary" className="font-medium text-xs h-8 flex items-center">
-            {metric.modelName || "-"}
-          </Badge>
-        }
+        displayValue={metric.modelName || "-"}
       />
       <datalist id={datalistId}>
         {datalistOptions.map((model) => (
@@ -170,6 +165,39 @@ export function ModelCell({
   );
 }
 
+interface ModelVersionCellProps {
+  metric: ProjectMetric;
+  isEditing: boolean;
+  isGlobalEdit: boolean;
+  isMarkedForDeletion: boolean;
+  value: string;
+  onValueChange: (value: string | number | undefined) => void;
+}
+
+export function ModelVersionCell({
+  metric,
+  isEditing,
+  isGlobalEdit,
+  isMarkedForDeletion,
+  value,
+  onValueChange
+}: ModelVersionCellProps) {
+  return (
+    <DataTableCell
+      metric={metric}
+      field="modelVersion"
+      isEditing={isEditing}
+      isGlobalEdit={isGlobalEdit}
+      isMarkedForDeletion={isMarkedForDeletion}
+      value={value}
+      inputType="text"
+      placeholder="Model version"
+      onValueChange={onValueChange}
+      displayValue={metric.modelVersion || "-"}
+    />
+  );
+}
+
 interface MetricCellProps {
   metric: ProjectMetric;
   field: string;
@@ -177,7 +205,7 @@ interface MetricCellProps {
   isGlobalEdit: boolean;
   isMarkedForDeletion: boolean;
   value: string | number;
-  onValueChange: (value: number | undefined) => void;
+  onValueChange: (value: string | number | undefined) => void;
 }
 
 export function MetricCell({

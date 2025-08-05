@@ -43,6 +43,7 @@ export interface ChartData {
   data: Array<{
     x: string;
     y: number;
+    modelVersion?: string;
   }>;
 }
 
@@ -63,10 +64,12 @@ export interface ChartPoint {
   data: {
     x: string | Date;
     y: number;
+    modelVersion?: string;
   };
   metricType?: MetricType;
   timestamp?: string;
   modelName?: string;
+  modelVersion?: string;
   projectId?: string;
 }
 
@@ -81,6 +84,7 @@ export interface NivoChartPoint {
   data: {
     x: string | Date;
     y: number;
+    modelVersion?: string;
   };
 }
 

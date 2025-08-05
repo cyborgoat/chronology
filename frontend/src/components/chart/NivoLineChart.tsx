@@ -4,6 +4,13 @@ import type { ChartData, MetricType, Project, ChartPoint } from "../../types";
 import { CHART_CONFIG } from "./ChartConfig";
 import { ChartTooltip } from "./ChartTooltip";
 
+// Type for Nivo point data that includes modelVersion
+interface NivoPointData {
+  x: string | Date;
+  y: number;
+  modelVersion?: string;
+}
+
 export interface NivoLineChartProps {
   chartData: ChartData[];
   selectedProject: Project;
@@ -97,7 +104,12 @@ export const NivoLineChart = forwardRef<HTMLDivElement, NivoLineChartProps>(({
             serieId: props.point.seriesId,
             serieColor: props.point.seriesColor,
             seriesId: props.point.seriesId,
-            data: props.point.data,
+            data: {
+              x: props.point.data.x,
+              y: props.point.data.y,
+              modelVersion: (props.point.data as NivoPointData).modelVersion,
+            },
+            modelVersion: (props.point.data as NivoPointData).modelVersion,
           };
           return (
             <ChartTooltip

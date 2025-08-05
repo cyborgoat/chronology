@@ -1,7 +1,7 @@
 import { TableCell, TableRow as UITableRow } from "@/components/ui/table";
 import type { ProjectMetric, MetricType } from "../../types";
 import { tableRenderUtils, type TableEditState, type TableActionHandlers } from "../../utils/table/tableUtils";
-import { DateCell, ModelCell, MetricCell } from "./TableCell";
+import { DateCell, ModelCell, ModelVersionCell, MetricCell } from "./TableCell";
 import { TableActions } from "./TableActions";
 import { TABLE_CONSTANTS } from "../../utils/table/tableUtils";
 
@@ -78,6 +78,16 @@ export function DataTableRow({
           onValueChange={(value) => handleValueChange("modelName", value)}
           datalistId={state.globalEditMode ? `available-models-bulk-${metric.id}` : "available-models-edit"}
           datalistOptions={availableModels}
+        />
+      </TableCell>
+      <TableCell className={TABLE_CONSTANTS.MIN_COLUMN_WIDTHS.model}>
+        <ModelVersionCell
+          metric={metric}
+          isEditing={isEditing}
+          isGlobalEdit={state.globalEditMode}
+          isMarkedForDeletion={isMarkedForDeletion}
+          value={getInputValue("modelVersion")}
+          onValueChange={(value) => handleValueChange("modelVersion", value)}
         />
       </TableCell>
       

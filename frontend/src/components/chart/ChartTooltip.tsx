@@ -48,6 +48,12 @@ export function ChartTooltip({
           <span className="text-gray-600"><strong>Model:</strong></span>
           <span className="font-medium">{modelName || "Unknown"}</span>
         </div>
+        {point.modelVersion && (
+          <div className="flex justify-between">
+            <span className="text-gray-600"><strong>Version:</strong></span>
+            <span className="font-medium">{point.modelVersion}</span>
+          </div>
+        )}
         <div className="flex justify-between">
           <span className="text-gray-600"><strong>Metric:</strong></span>
           <span className="font-medium">{metricType ? getMetricLabel(metricType) : "Unknown"}</span>

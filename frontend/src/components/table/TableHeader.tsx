@@ -56,6 +56,17 @@ export function DataTableHeader({
             </div>
           </div>
         </TableHead>
+        <TableHead 
+          className={`font-semibold ${tableStyles.sortableHeader} ${TABLE_CONSTANTS.MIN_COLUMN_WIDTHS.model}`}
+          onClick={() => onSort('modelVersion')}
+        >
+          <div className="flex items-center justify-between">
+            <span>Version</span>
+            <div className="w-4 h-4 flex items-center justify-center ml-2">
+              {getSortIcon('modelVersion')}
+            </div>
+          </div>
+        </TableHead>
         {enabledDefaultMetrics.map((key) => (
           <TableHead 
             key={key} 
