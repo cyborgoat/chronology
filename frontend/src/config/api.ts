@@ -22,6 +22,11 @@ export const API_ENDPOINTS = {
   
   // Utility endpoints
   projectModels: (projectId: string) => `/projects/${projectId}/models`,
+  
+  // Dataset endpoints
+  datasets: '/datasets',
+  dataset: (id: string) => `/datasets/${id}`,
+  datasetContent: (id: string) => `/datasets/${id}/content`,
 } as const;
 
 // HTTP methods

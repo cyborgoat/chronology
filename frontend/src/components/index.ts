@@ -6,3 +6,5 @@ export { MetricSelector } from './MetricSelector';
 export { ViewToggle } from './ViewToggle';
 export { ProjectStats } from './ProjectStats';
 export { MetricsConfig } from './MetricsConfig';
+export { DatasetCard } from './DatasetCard';
+export { DatasetsView } from './DatasetsView';

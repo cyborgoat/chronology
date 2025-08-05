@@ -1,0 +1,11 @@
+date,product,category,region,sales_amount,units_sold,profit_margin
+2024-01-01,Laptop,Electronics,North,1200.50,5,0.15
+2024-01-02,Desk Chair,Furniture,South,450.00,2,0.25
+2024-01-03,Smartphone,Electronics,West,800.00,3,0.20
+2024-01-04,Bookshelf,Furniture,East,300.00,1,0.30
+2024-01-05,Tablet,Electronics,North,600.00,2,0.18
+2024-01-06,Office Desk,Furniture,South,750.00,1,0.22
+2024-01-07,Monitor,Electronics,West,350.00,2,0.12
+2024-01-08,Books,Books,East,50.00,10,0.40
+2024-01-09,Keyboard,Electronics,North,120.00,5,0.25
+2024-01-10,Printer,Electronics,South,400.00,1,0.15 

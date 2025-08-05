@@ -7,6 +7,7 @@ import { DataTable } from "./components/DataTable";
 import { ViewToggle } from "./components/ViewToggle";
 import { ProjectStats } from "./components/ProjectStats";
 import { MetricsConfig } from "./components/MetricsConfig";
+import { DatasetsView } from "./components/DatasetsView";
 import type { ViewMode, ChartPoint } from "./types";
 import {
   Card,
@@ -20,12 +21,6 @@ import { Button } from "@/components/ui/button";
 function AppContent() {
   const [currentView, setCurrentView] = useState<ViewMode>("chart");
   const [editingPoint, setEditingPoint] = useState<ChartPoint | null>(null);
-
-  const handlePointClick = (point: ChartPoint) => {
-    setEditingPoint(point);
-    // You could open a modal here to edit the specific data point
-    console.log("Point clicked:", point);
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -46,9 +41,13 @@ function AppContent() {
         {/* Main Content Area */}
         <div className="space-y-6">
           {currentView === "chart" ? (
-            <TimelineChart onPointClick={handlePointClick} />
+            <TimelineChart />
           ) : currentView === "table" ? (
             <DataTable />
+          ) : currentView === "metrics" ? (
+            <MetricsConfig />
+          ) : currentView === "datasets" ? (
+            <DatasetsView />
           ) : (
             <MetricsConfig />
           )}

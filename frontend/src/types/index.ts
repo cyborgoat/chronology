@@ -49,7 +49,18 @@ export interface ChartData {
 
 export type MetricType = 'accuracy' | 'loss' | 'precision' | 'recall' | 'f1Score' | string;
 
-export type ViewMode = 'chart' | 'table' | 'metrics';
+export type ViewMode = 'chart' | 'table' | 'metrics' | 'datasets';
+
+export interface Dataset {
+  id: string;
+  name: string;
+  filename: string;
+  size: number; // in bytes
+  samples: number;
+  columns: string[];
+  description?: string;
+  createdAt: string;
+}
 
 export type ChartViewMode = 'metric-wise' | 'model-wise';
 

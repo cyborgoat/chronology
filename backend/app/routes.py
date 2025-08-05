@@ -24,6 +24,7 @@ from .storage import (
 )
 from .database import get_db
 from .exceptions import project_not_found, metric_not_found, bad_request_error
+from .dataset_service import DatasetService
 
 router = APIRouter(prefix="/api/v1")
 
@@ -211,3 +212,28 @@ def get_available_models(project_id: str, db: Session = Depends(get_db)):
     
     model_names = MetricRecordService.get_models(db, project_id)
     return {"models": model_names}
+
+# Dataset routes
+@router.get("/datasets")
+def list_datasets():
+    """List all available CSV datasets"""
+    dataset_service = DatasetService()
+    return dataset_service.list_datasets()
+
+@router.get("/datasets/{dataset_id}")
+def get_dataset(dataset_id: str):
+    """Get a specific dataset by ID"""
+    dataset_service = DatasetService()
+    dataset = dataset_service.get_dataset_by_id(dataset_id)
+    if not dataset:
+        raise project_not_found(dataset_id)  # Reuse existing exception
+    return dataset
+
+@router.get("/datasets/{dataset_id}/content")
+def get_dataset_content(dataset_id: str, limit: int = 100):
+    """Get dataset content with optional row limit"""
+    dataset_service = DatasetService()
+    content = dataset_service.get_dataset_content(dataset_id, limit)
+    if not content:
+        raise project_not_found(dataset_id)  # Reuse existing exception
+    return content
